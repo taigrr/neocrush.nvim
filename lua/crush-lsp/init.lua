@@ -241,6 +241,64 @@ end
 -- LSP Attachment (cursor sync)
 -------------------------------------------------------------------------------
 
+local function get_visual_selection_text()
+  -- Get the visual selection marks
+  local start_pos = vim.fn.getpos "'<"
+  local end_pos = vim.fn.getpos "'>"
+
+  if start_pos[2] == 0 or end_pos[2] == 0 then
+    return nil
+  end
+
+  local start_line = start_pos[2]
+  local start_col = start_pos[3]
+  local end_line = end_pos[2]
+  local end_col = end_pos[3]
+
+  -- Get the lines
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+  if #lines == 0 then
+    return nil
+  end
+
+  -- Adjust for partial line selection
+  if #lines == 1 then
+    lines[1] = string.sub(lines[1], start_col, end_col)
+  else
+    lines[1] = string.sub(lines[1], start_col)
+    lines[#lines] = string.sub(lines[#lines], 1, end_col)
+  end
+
+  return table.concat(lines, '\n')
+end
+
+local function setup_selection_sync(client, bufnr)
+  -- Track when leaving visual mode to capture selection
+  vim.api.nvim_create_autocmd('ModeChanged', {
+    buffer = bufnr,
+    group = vim.api.nvim_create_augroup('CrushLspSelectionSync' .. bufnr, { clear = true }),
+    callback = function(event)
+      local old_mode = event.match:sub(1, 1)
+      local new_mode = event.match:sub(-1)
+
+      -- Leaving visual mode (v, V, or ctrl-v)
+      if (old_mode == 'v' or old_mode == 'V' or old_mode == '\22') and new_mode == 'n' then
+        -- Schedule to run after mode change is complete
+        vim.schedule(function()
+          local text = get_visual_selection_text()
+          local uri = vim.uri_from_bufnr(bufnr)
+
+          client:notify('crush/selectionChanged', {
+            textDocument = { uri = uri },
+            text = text or '',
+            selections = {}, -- Could add range info here if needed
+          })
+        end)
+      end
+    end,
+  })
+end
+
 local function setup_cursor_sync(client, bufnr)
   local cursor_timer = nil
 
@@ -360,6 +418,7 @@ function M.start_lsp(opts)
     root_dir = root_dir,
     on_attach = function(client, bufnr)
       setup_cursor_sync(client, bufnr)
+      setup_selection_sync(client, bufnr)
       if opts.on_attach then
         opts.on_attach(client, bufnr)
       end
@@ -451,6 +510,7 @@ local function setup_lsp_attach()
       local client = vim.lsp.get_client_by_id(event.data.client_id)
       if client and client.name == 'crush-lsp' then
         setup_cursor_sync(client, event.buf)
+        setup_selection_sync(client, event.buf)
       end
     end,
   })

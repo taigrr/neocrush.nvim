@@ -130,6 +130,10 @@ crush.get_client()          -- Get LSP client instance
 This plugin manages the LSP client directly via `vim.lsp.start()` on `VimEnter`.
 Adding it to Mason would cause duplicate clients or conflicts.
 
+This deviates from typical LSP setup, but is necessary for seamless integration
+with agentic coding workflows, allowing the LSP to launch and track Crush edits
+without opening a file first.
+
 If you previously had crush-lsp in your LSP config, remove it:
 
 ```lua
