@@ -438,7 +438,8 @@ function M.start_lsp(opts)
   opts = opts or {}
   local cwd = vim.fn.getcwd()
   local git_root = vim.fn.systemlist('git rev-parse --show-toplevel 2>/dev/null')[1]
-  local root_dir = opts.root_dir or ((git_root and git_root ~= '' and vim.fn.isdirectory(git_root) == 1) and git_root or cwd)
+  local root_dir = opts.root_dir
+    or ((git_root and git_root ~= '' and vim.fn.isdirectory(git_root) == 1) and git_root or cwd)
 
   return vim.lsp.start {
     name = 'crush-lsp',
@@ -542,6 +543,18 @@ local function setup_lsp_attach()
       end
     end,
   })
+
+  -- Also set up sync for buffers entered after LSP is already running
+  vim.api.nvim_create_autocmd('BufEnter', {
+    group = vim.api.nvim_create_augroup('CrushLspBufEnter', { clear = true }),
+    callback = function(event)
+      local clients = vim.lsp.get_clients({ name = 'crush-lsp', bufnr = event.buf })
+      if #clients > 0 then
+        setup_cursor_sync(clients[1], event.buf)
+        setup_selection_sync(clients[1], event.buf)
+      end
+    end,
+  })
 end
 
 local function setup_early_start()
@@ -556,6 +569,21 @@ local function setup_early_start()
       end,
     })
   end
+
+  -- Also start LSP when entering a buffer (for lazy loading scenarios)
+  vim.api.nvim_create_autocmd('BufEnter', {
+    group = vim.api.nvim_create_augroup('CrushLspBufStart', { clear = true }),
+    callback = function()
+      -- Only for normal file buffers
+      if vim.bo.buftype == '' and vim.bo.filetype ~= '' then
+        -- Check if crush-lsp is already attached to this buffer
+        local clients = vim.lsp.get_clients({ name = 'crush-lsp', bufnr = 0 })
+        if #clients == 0 then
+          M.start_lsp()
+        end
+      end
+    end,
+  })
 end
 
 ---@param opts CrushLspConfig|nil
