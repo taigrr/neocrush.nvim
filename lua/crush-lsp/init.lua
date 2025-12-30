@@ -273,11 +273,22 @@ local function get_visual_selection_text()
 end
 
 local function setup_selection_sync(client, bufnr)
+  -- Skip terminal and special buffers
+  local buftype = vim.bo[bufnr].buftype
+  if buftype == 'terminal' or buftype == 'nofile' or buftype == 'prompt' then
+    return
+  end
+
   -- Track when leaving visual mode to capture selection
   vim.api.nvim_create_autocmd('ModeChanged', {
     buffer = bufnr,
     group = vim.api.nvim_create_augroup('CrushLspSelectionSync' .. bufnr, { clear = true }),
     callback = function(event)
+      -- Double-check we're not in a special buffer
+      if vim.bo[bufnr].buftype ~= '' then
+        return
+      end
+
       local old_mode = event.match:sub(1, 1)
       local new_mode = event.match:sub(-1)
 
@@ -288,11 +299,14 @@ local function setup_selection_sync(client, bufnr)
           local text = get_visual_selection_text()
           local uri = vim.uri_from_bufnr(bufnr)
 
-          client:notify('crush/selectionChanged', {
-            textDocument = { uri = uri },
-            text = text or '',
-            selections = {}, -- Could add range info here if needed
-          })
+          -- Only send if we have a valid URI
+          if uri and uri ~= '' and uri ~= 'file://' then
+            client:notify('crush/selectionChanged', {
+              textDocument = { uri = uri },
+              text = text or '',
+              selections = {}, -- Could add range info here if needed
+            })
+          end
         end)
       end
     end,
@@ -300,22 +314,36 @@ local function setup_selection_sync(client, bufnr)
 end
 
 local function setup_cursor_sync(client, bufnr)
+  -- Skip terminal and special buffers
+  local buftype = vim.bo[bufnr].buftype
+  if buftype == 'terminal' or buftype == 'nofile' or buftype == 'prompt' then
+    return
+  end
+
   local cursor_timer = nil
 
   vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
     buffer = bufnr,
     group = vim.api.nvim_create_augroup('CrushLspCursorSync' .. bufnr, { clear = true }),
     callback = function()
+      -- Double-check we're not in a special buffer
+      if vim.bo[bufnr].buftype ~= '' then
+        return
+      end
+
       if cursor_timer then
         cursor_timer:stop()
       end
       cursor_timer = vim.defer_fn(function()
         local pos = vim.api.nvim_win_get_cursor(0)
         local uri = vim.uri_from_bufnr(bufnr)
-        client:notify('crush/cursorMoved', {
-          textDocument = { uri = uri },
-          position = { line = pos[1] - 1, character = pos[2] },
-        })
+        -- Only send if we have a valid URI
+        if uri and uri ~= '' and uri ~= 'file://' then
+          client:notify('crush/cursorMoved', {
+            textDocument = { uri = uri },
+            position = { line = pos[1] - 1, character = pos[2] },
+          })
+        end
       end, 50)
     end,
   })
