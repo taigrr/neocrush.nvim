@@ -1,11 +1,11 @@
--- crush-lsp.nvim
--- Neovim plugin for crush-lsp integration (testing edit highlight!)
+-- neocrush.nvim
+-- Neovim plugin for neocrush integration (testing edit highlight!)
 --
 -- Features:
 --   - Flash highlights on AI edits (like yank highlight)
 --   - Auto-focus edited files in leftmost code window
 --   - Crush terminal management (:CrushToggle, <leader>cc)
---   - Cursor position sync with crush-lsp server
+--   - Cursor position sync with neocrush server
 --
 -- Commands:
 --   :CrushToggle / <leader>cc  - Toggle Crush terminal (right split)
@@ -45,7 +45,7 @@ local config = {}
 -- Highlight Namespace
 -------------------------------------------------------------------------------
 
-local ns = vim.api.nvim_create_namespace 'crush-lsp-highlight'
+local ns = vim.api.nvim_create_namespace 'neocrush-highlight'
 
 -------------------------------------------------------------------------------
 -- Terminal State
@@ -203,14 +203,14 @@ local function install_apply_edit_handler()
   original_handler = vim.lsp.handlers['workspace/applyEdit']
 
   vim.lsp.handlers['workspace/applyEdit'] = function(err, result, ctx, conf)
-    -- Check if this is from crush-lsp
+    -- Check if this is from neocrush
     local client = vim.lsp.get_client_by_id(ctx.client_id)
-    local is_crush = client and client.name == 'crush-lsp'
+    local is_crush = client and client.name == 'neocrush'
 
     -- Call original handler first
     local response = original_handler(err, result, ctx, conf)
 
-    -- If from crush-lsp, highlight the changes and optionally focus
+    -- If from neocrush, highlight the changes and optionally focus
     if is_crush and result and result.edit and result.edit.changes then
       for uri, edits in pairs(result.edit.changes) do
         local bufnr = vim.uri_to_bufnr(uri)
@@ -442,8 +442,8 @@ function M.start_lsp(opts)
     or ((git_root and git_root ~= '' and vim.fn.isdirectory(git_root) == 1) and git_root or cwd)
 
   return vim.lsp.start {
-    name = 'crush-lsp',
-    cmd = { 'crush-lsp' },
+    name = 'neocrush',
+    cmd = { 'neocrush' },
     root_dir = root_dir,
     on_attach = function(client, bufnr)
       setup_cursor_sync(client, bufnr)
@@ -456,7 +456,7 @@ function M.start_lsp(opts)
 end
 
 function M.get_client()
-  local clients = vim.lsp.get_clients { name = 'crush-lsp' }
+  local clients = vim.lsp.get_clients { name = 'neocrush' }
   return clients[1]
 end
 
@@ -537,7 +537,7 @@ local function setup_lsp_attach()
     group = vim.api.nvim_create_augroup('CrushLspAttach', { clear = true }),
     callback = function(event)
       local client = vim.lsp.get_client_by_id(event.data.client_id)
-      if client and client.name == 'crush-lsp' then
+      if client and client.name == 'neocrush' then
         setup_cursor_sync(client, event.buf)
         setup_selection_sync(client, event.buf)
       end
@@ -548,7 +548,7 @@ local function setup_lsp_attach()
   vim.api.nvim_create_autocmd('BufEnter', {
     group = vim.api.nvim_create_augroup('CrushLspBufEnter', { clear = true }),
     callback = function(event)
-      local clients = vim.lsp.get_clients({ name = 'crush-lsp', bufnr = event.buf })
+      local clients = vim.lsp.get_clients({ name = 'neocrush', bufnr = event.buf })
       if #clients > 0 then
         setup_cursor_sync(clients[1], event.buf)
         setup_selection_sync(clients[1], event.buf)
@@ -576,8 +576,8 @@ local function setup_early_start()
     callback = function()
       -- Only for normal file buffers
       if vim.bo.buftype == '' and vim.bo.filetype ~= '' then
-        -- Check if crush-lsp is already attached to this buffer
-        local clients = vim.lsp.get_clients({ name = 'crush-lsp', bufnr = 0 })
+        -- Check if neocrush is already attached to this buffer
+        local clients = vim.lsp.get_clients({ name = 'neocrush', bufnr = 0 })
         if #clients == 0 then
           M.start_lsp()
         end

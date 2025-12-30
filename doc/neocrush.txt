@@ -1,58 +1,58 @@
-*crush-lsp.nvim.txt*  Neovim integration for crush-lsp
+*neocrush.nvim.txt*  Neovim integration for neocrush
 
 ==============================================================================
-CONTENTS                                              *crush-lsp-contents*
+CONTENTS                                              *neocrush-contents*
 
-    1. Introduction ........................... |crush-lsp-introduction|
-    2. Requirements ........................... |crush-lsp-requirements|
-    3. Installation ........................... |crush-lsp-installation|
-    4. Configuration .......................... |crush-lsp-configuration|
-    5. Commands ............................... |crush-lsp-commands|
-    6. API .................................... |crush-lsp-api|
-    7. Keymaps ................................ |crush-lsp-keymaps|
+    1. Introduction ........................... |neocrush-introduction|
+    2. Requirements ........................... |neocrush-requirements|
+    3. Installation ........................... |neocrush-installation|
+    4. Configuration .......................... |neocrush-configuration|
+    5. Commands ............................... |neocrush-commands|
+    6. API .................................... |neocrush-api|
+    7. Keymaps ................................ |neocrush-keymaps|
 
 ==============================================================================
-1. INTRODUCTION                                   *crush-lsp-introduction*
+1. INTRODUCTION                                   *neocrush-introduction*
 
-crush-lsp.nvim provides Neovim integration for the crush-lsp server,
+neocrush.nvim provides Neovim integration for the neocrush server,
 enabling features like:
 
 - Flash highlights on AI-generated edits (similar to yank highlight)
 - Auto-focus of edited files in the leftmost code window
 - Crush terminal management with toggle/focus commands
-- Cursor position synchronization with the crush-lsp server
+- Cursor position synchronization with the neocrush server
 
 ==============================================================================
-2. REQUIREMENTS                                   *crush-lsp-requirements*
+2. REQUIREMENTS                                   *neocrush-requirements*
 
 - Neovim >= 0.10
-- crush-lsp binary in PATH (https://github.com/taigrr/crush-lsp)
+- neocrush binary in PATH (https://github.com/taigrr/neocrush)
 - Optional: crush CLI for terminal integration
 
 ==============================================================================
-3. INSTALLATION                                   *crush-lsp-installation*
+3. INSTALLATION                                   *neocrush-installation*
 
 Using lazy.nvim: >lua
     {
-      'taigrr/crush-lsp.nvim',
+      'taigrr/neocrush.nvim',
       opts = {},
     }
 <
 
 Using packer.nvim: >lua
     use {
-      'taigrr/crush-lsp.nvim',
+      'taigrr/neocrush.nvim',
       config = function()
-        require('crush-lsp').setup()
+        require('neocrush').setup()
       end,
     }
 <
 
 ==============================================================================
-4. CONFIGURATION                                 *crush-lsp-configuration*
+4. CONFIGURATION                                 *neocrush-configuration*
 
 Call `setup()` with a configuration table: >lua
-    require('crush-lsp').setup {
+    require('neocrush').setup {
       -- Highlight group for edit flash effect
       highlight_group = 'IncSearch',
 
@@ -85,7 +85,7 @@ Keymap configuration examples: >lua
 <
 
 ==============================================================================
-5. COMMANDS                                           *crush-lsp-commands*
+5. COMMANDS                                           *neocrush-commands*
 
 *:CrushToggle*          Toggle the Crush terminal window (right split)
 *:CrushOpen*            Open the Crush terminal
@@ -97,48 +97,48 @@ Keymap configuration examples: >lua
 *:CrushFocusOff*        Disable auto-focus
 
 ==============================================================================
-6. API                                                     *crush-lsp-api*
+6. API                                                     *neocrush-api*
 
-*crush-lsp.setup*({opts})                          *crush-lsp.setup()*
+*neocrush.setup*({opts})                          *neocrush.setup()*
     Initialize the plugin with the given configuration.
 
-*crush-lsp.toggle*()                               *crush-lsp.toggle()*
+*neocrush.toggle*()                               *neocrush.toggle()*
     Toggle the Crush terminal window.
 
-*crush-lsp.open*()                                 *crush-lsp.open()*
+*neocrush.open*()                                 *neocrush.open()*
     Open the Crush terminal.
 
-*crush-lsp.close*()                                *crush-lsp.close()*
+*neocrush.close*()                                *neocrush.close()*
     Close the Crush terminal.
 
-*crush-lsp.focus*()                                *crush-lsp.focus()*
+*neocrush.focus*()                                *neocrush.focus()*
     Focus the Crush terminal (opens if not visible).
 
-*crush-lsp.set_width*({width})                     *crush-lsp.set_width()*
+*neocrush.set_width*({width})                     *neocrush.set_width()*
     Set the terminal width.
 
-*crush-lsp.toggle_auto_focus*()                    *crush-lsp.toggle_auto_focus()*
+*neocrush.toggle_auto_focus*()                    *neocrush.toggle_auto_focus()*
     Toggle auto-focus behavior.
 
-*crush-lsp.enable_auto_focus*()                    *crush-lsp.enable_auto_focus()*
+*neocrush.enable_auto_focus*()                    *neocrush.enable_auto_focus()*
     Enable auto-focus.
 
-*crush-lsp.disable_auto_focus*()                   *crush-lsp.disable_auto_focus()*
+*neocrush.disable_auto_focus*()                   *neocrush.disable_auto_focus()*
     Disable auto-focus.
 
-*crush-lsp.is_auto_focus_enabled*()                *crush-lsp.is_auto_focus_enabled()*
+*neocrush.is_auto_focus_enabled*()                *neocrush.is_auto_focus_enabled()*
     Returns true if auto-focus is enabled.
 
-*crush-lsp.start_lsp*({opts})                      *crush-lsp.start_lsp()*
-    Manually start the crush-lsp client. Options:
+*neocrush.start_lsp*({opts})                      *neocrush.start_lsp()*
+    Manually start the neocrush client. Options:
     - root_dir: Override the root directory
     - on_attach: Additional on_attach callback
 
-*crush-lsp.get_client*()                           *crush-lsp.get_client()*
-    Get the crush-lsp client instance (or nil if not running).
+*neocrush.get_client*()                           *neocrush.get_client()*
+    Get the neocrush client instance (or nil if not running).
 
 ==============================================================================
-7. KEYMAPS                                             *crush-lsp-keymaps*
+7. KEYMAPS                                             *neocrush-keymaps*
 
 Default keymaps (can be disabled or customized via config):
 

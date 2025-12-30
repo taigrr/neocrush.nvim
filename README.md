@@ -1,18 +1,18 @@
-# crush-lsp.nvim
+# neocrush.nvim
 
-Neovim plugin for [crush-lsp](https://github.com/taigrr/crush-lsp) integration.
+Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 
 ## Features
 
 - **Edit Highlighting**: Flash highlights on AI-generated edits (like yank highlight)
 - **Auto-focus**: Automatically focus edited files in the leftmost code window
 - **Terminal Management**: Toggle/focus Crush terminal with keymaps and commands
-- **Cursor Sync**: Send cursor position to crush-lsp for context awareness
+- **Cursor Sync**: Send cursor position to neocrush for context awareness
 
 ## Requirements
 
 - Neovim >= 0.10
-- [crush-lsp](https://github.com/taigrr/crush-lsp) binary in PATH
+- [neocrush](https://github.com/taigrr/neocrush) binary in PATH
 - [crush](https://github.com/charmbracelet/crush) CLI for terminal integration
 
 ## Installation
@@ -21,7 +21,7 @@ Neovim plugin for [crush-lsp](https://github.com/taigrr/crush-lsp) integration.
 
 ```lua
 {
-  'taigrr/crush-lsp.nvim',
+  'taigrr/neocrush.nvim',
   event = 'VeryLazy',
   opts = {},
 }
@@ -34,9 +34,9 @@ Using `event = 'VeryLazy'` ensures it loads after UI is ready but before you sta
 
 ```lua
 use {
-  'taigrr/crush-lsp.nvim',
+  'taigrr/neocrush.nvim',
   config = function()
-    require('crush-lsp').setup()
+    require('neocrush').setup()
   end,
 }
 ```
@@ -44,7 +44,7 @@ use {
 ## Configuration
 
 ```lua
-require('crush-lsp').setup {
+require('neocrush').setup {
   -- Highlight group for edit flash effect
   highlight_group = 'IncSearch',
 
@@ -101,7 +101,7 @@ keymaps = {
 ## API
 
 ```lua
-local crush = require('crush-lsp')
+local crush = require('neocrush')
 
 crush.toggle()              -- Toggle terminal
 crush.open()                -- Open terminal
@@ -119,14 +119,14 @@ crush.get_client()          -- Get LSP client instance
 
 ## How It Works
 
-1. **LSP Integration**: The plugin starts `crush-lsp` on `VimEnter` - no filetype restrictions, so it's ready for edits immediately
-2. **Edit Handler**: Overrides `workspace/applyEdit` to detect crush-lsp edits and flash highlight them
+1. **LSP Integration**: The plugin starts `neocrush` on `VimEnter` - no filetype restrictions, so it's ready for edits immediately
+2. **Edit Handler**: Overrides `workspace/applyEdit` to detect neocrush edits and flash highlight them
 3. **Cursor Sync**: Sends `crush/cursorMoved` notifications to keep the LSP server aware of cursor position
 4. **Terminal**: Manages a persistent terminal buffer for running the Crush CLI
 
 ## Important Notes
 
-**Do NOT add crush-lsp to your Mason/lspconfig servers table.**
+**Do NOT add neocrush to your Mason/lspconfig servers table.**
 This plugin manages the LSP client directly via `vim.lsp.start()` on `VimEnter`.
 Adding it to Mason would cause duplicate clients or conflicts.
 
@@ -134,12 +134,12 @@ This deviates from typical LSP setup, but is necessary for seamless integration
 with agentic coding workflows, allowing the LSP to launch and track Crush edits
 without opening a file first.
 
-If you previously had crush-lsp in your LSP config, remove it:
+If you previously had neocrush in your LSP config, remove it:
 
 ```lua
 -- REMOVE this from your lsp.lua / servers table:
-['crush-lsp'] = {
-  cmd = { 'crush-lsp' },
+['neocrush'] = {
+  cmd = { 'neocrush' },
   filetypes = { ... },
   root_markers = { '.git', '.crush' },
 },
@@ -149,10 +149,10 @@ If you previously had crush-lsp in your LSP config, remove it:
 
 ### "buffer not loaded" Warning
 
-When crush-lsp applies edits to a file that isn't currently open in Neovim, you may see a warning like:
+When neocrush applies edits to a file that isn't currently open in Neovim, you may see a warning like:
 
 ```
-crush-lsp: buffer for file:///path/to/file.go is not loaded. Load buffer to get syntax highlighting.
+neocrush: buffer for file:///path/to/file.go is not loaded. Load buffer to get syntax highlighting.
 ```
 
 This is expected behavior - the LSP server can edit any file, but Neovim needs to load it into a buffer for the flash highlight to work.
