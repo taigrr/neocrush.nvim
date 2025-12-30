@@ -157,7 +157,3 @@ neocrush: buffer for file:///path/to/file.go is not loaded. Load buffer to get s
 
 This is expected behavior - the LSP server can edit any file, but Neovim needs to load it into a buffer for the flash highlight to work.
 The edit still succeeds; you just won't see the highlight animation until you open that file.
-
-## License
-
-MIT
