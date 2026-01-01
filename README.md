@@ -6,14 +6,17 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 
 - **Edit Highlighting**: Flash highlights on AI-generated edits (like yank highlight)
 - **Auto-focus**: Automatically focus edited files in the leftmost code window
-- **Terminal Management**: Toggle/focus Crush terminal with keymaps and commands
+- **Terminal Management**: Toggle/focus Crush terminal with commands
 - **Cursor Sync**: Send cursor position to neocrush for context awareness
+- **Binary Management**: Install/update binaries with `:CrushInstallBinaries`/`:CrushUpdateBinaries`
+- **Health Check**: Verify setup with `:checkhealth neocrush`
 
 ## Requirements
 
 - Neovim >= 0.10
 - [neocrush](https://github.com/taigrr/neocrush) binary in PATH
 - [crush](https://github.com/charmbracelet/crush) CLI for terminal integration
+- Go (for `:CrushInstallBinaries`/`:CrushUpdateBinaries` commands)
 
 ## Installation
 
@@ -24,6 +27,10 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
   'taigrr/neocrush.nvim',
   event = 'VeryLazy',
   opts = {},
+  keys = {
+    { '<leader>cc', '<cmd>CrushToggle<cr>', desc = 'Toggle Crush terminal' },
+    { '<leader>cf', '<cmd>CrushFocus<cr>', desc = 'Focus Crush terminal' },
+  },
 }
 ```
 
@@ -37,6 +44,10 @@ use {
   'taigrr/neocrush.nvim',
   config = function()
     require('neocrush').setup()
+
+    -- Add your keymaps
+    vim.keymap.set('n', '<leader>cc', '<cmd>CrushToggle<cr>', { desc = 'Toggle Crush terminal' })
+    vim.keymap.set('n', '<leader>cf', '<cmd>CrushFocus<cr>', { desc = 'Focus Crush terminal' })
   end,
 }
 ```
@@ -44,7 +55,7 @@ use {
 ## Configuration
 
 ```lua
-require('neocrush').setup {
+require('neocrush').setup({
   -- Highlight group for edit flash effect
   highlight_group = 'IncSearch',
 
@@ -59,23 +70,7 @@ require('neocrush').setup {
 
   -- Command to run in terminal
   terminal_cmd = 'crush',
-
-  -- Enable default keymaps (true, false, or table of overrides)
-  keymaps = true,
-}
-```
-
-### Keymap Customization
-
-```lua
--- Disable all keymaps
-keymaps = false,
-
--- Override specific keymaps
-keymaps = {
-  ['<leader>cc'] = '<leader>ct',  -- Change toggle keymap
-  ['<leader>cf'] = false,          -- Disable focus keymap
-},
+})
 ```
 
 ## Commands
@@ -90,29 +85,40 @@ keymaps = {
 | `:CrushFocusToggle` | Toggle auto-focus behavior              |
 | `:CrushFocusOn`     | Enable auto-focus                       |
 | `:CrushFocusOff`    | Disable auto-focus                      |
+| `:CrushInstallBinaries` | Install neocrush and crush binaries (requires Go) |
+| `:CrushUpdateBinaries` | Update neocrush and crush binaries (requires Go) |
 
-## Default Keymaps
+## Suggested Keymaps
 
-| Keymap       | Action                |
-| ------------ | --------------------- |
-| `<leader>cc` | Toggle Crush terminal |
-| `<leader>cf` | Focus Crush terminal  |
+The plugin does not set any keymaps by default.
+Add these to your configuration:
+
+```lua
+vim.keymap.set('n', '<leader>cc', '<cmd>CrushToggle<cr>', { desc = 'Toggle Crush terminal' })
+vim.keymap.set('n', '<leader>cf', '<cmd>CrushFocus<cr>', { desc = 'Focus Crush terminal' })
+```
+
+Or with lazy.nvim's `keys` option (see Installation above).
 
 ## API
 
 ```lua
 local crush = require('neocrush')
 
+-- Terminal management
 crush.toggle()              -- Toggle terminal
 crush.open()                -- Open terminal
 crush.close()               -- Close terminal
 crush.focus()               -- Focus terminal
 crush.set_width(100)        -- Set terminal width
 
+-- Auto-focus control
 crush.toggle_auto_focus()   -- Toggle auto-focus
 crush.enable_auto_focus()   -- Enable auto-focus
 crush.disable_auto_focus()  -- Disable auto-focus
+crush.is_auto_focus_enabled() -- Check if enabled
 
+-- LSP management
 crush.start_lsp()           -- Manually start LSP client
 crush.get_client()          -- Get LSP client instance
 ```
@@ -123,6 +129,19 @@ crush.get_client()          -- Get LSP client instance
 2. **Edit Handler**: Overrides `workspace/applyEdit` to detect neocrush edits and flash highlight them
 3. **Cursor Sync**: Sends `crush/cursorMoved` notifications to keep the LSP server aware of cursor position
 4. **Terminal**: Manages a persistent terminal buffer for running the Crush CLI
+
+## Health Check
+
+Run `:checkhealth neocrush` to verify your setup:
+
+```
+neocrush.nvim
+- OK Neovim >= 0.10
+- OK neocrush binary found
+- OK crush CLI found
+- OK Go found: go version go1.21.0 darwin/arm64
+- OK neocrush LSP client running
+```
 
 ## Important Notes
 
@@ -147,13 +166,31 @@ If you previously had neocrush in your LSP config, remove it:
 
 ## Known Limitations
 
-### "buffer not loaded" Warning
+### External File Modification Warning
 
-When neocrush applies edits to a file that isn't currently open in Neovim, you may see a warning like:
+When Crush edits a file that's open in Neovim, you may see a prompt like:
 
 ```
-neocrush: buffer for file:///path/to/file.go is not loaded. Load buffer to get syntax highlighting.
+WARNING: The file has been changed since reading it!!!
+Do you really want to write to it (y/n)?
 ```
 
-This is expected behavior - the LSP server can edit any file, but Neovim needs to load it into a buffer for the flash highlight to work.
-The edit still succeeds; you just won't see the highlight animation until you open that file.
+Or when re-entering a buffer:
+
+```
+W11: Warning: File "filename" has changed since editing started
+[O]K, (L)oad File:
+```
+
+This happens because Crush modifies files on disk, and Neovim detects the external change.
+To minimize this, consider adding to your config:
+
+```lua
+vim.o.autoread = true
+```
+
+This tells Neovim to automatically reload files when they change on disk (if you have no unsaved changes).
+
+## License
+
+MIT - See [LICENSE](LICENSE) for details.

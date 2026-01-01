@@ -1,7 +1,7 @@
-*neocrush.nvim.txt*  Neovim integration for neocrush
+*neocrush.txt*  Neovim integration for neocrush
 
 ==============================================================================
-CONTENTS                                              *neocrush-contents*
+CONTENTS                                                  *neocrush-contents*
 
     1. Introduction ........................... |neocrush-introduction|
     2. Requirements ........................... |neocrush-requirements|
@@ -10,32 +10,40 @@ CONTENTS                                              *neocrush-contents*
     5. Commands ............................... |neocrush-commands|
     6. API .................................... |neocrush-api|
     7. Keymaps ................................ |neocrush-keymaps|
+    8. Health Check ........................... |neocrush-health|
 
 ==============================================================================
-1. INTRODUCTION                                   *neocrush-introduction*
+1. INTRODUCTION                                       *neocrush-introduction*
 
-neocrush.nvim provides Neovim integration for the neocrush server,
+neocrush.nvim provides Neovim integration for the neocrush LSP server,
 enabling features like:
 
 - Flash highlights on AI-generated edits (similar to yank highlight)
 - Auto-focus of edited files in the leftmost code window
 - Crush terminal management with toggle/focus commands
 - Cursor position synchronization with the neocrush server
+- Binary installation/update via `:CrushInstallBinaries` and `:CrushUpdateBinaries`
 
 ==============================================================================
-2. REQUIREMENTS                                   *neocrush-requirements*
+2. REQUIREMENTS                                       *neocrush-requirements*
 
 - Neovim >= 0.10
 - neocrush binary in PATH (https://github.com/taigrr/neocrush)
-- Optional: crush CLI for terminal integration
+- crush CLI in PATH (https://github.com/charmbracelet/crush)
+- Optional: Go for `:CrushInstallBinaries` and `:CrushUpdateBinaries` commands
 
 ==============================================================================
-3. INSTALLATION                                   *neocrush-installation*
+3. INSTALLATION                                       *neocrush-installation*
 
 Using lazy.nvim: >lua
     {
       'taigrr/neocrush.nvim',
+      event = 'VeryLazy',
       opts = {},
+      keys = {
+        { '<leader>cc', '<cmd>CrushToggle<cr>', desc = 'Toggle Crush terminal' },
+        { '<leader>cf', '<cmd>CrushFocus<cr>', desc = 'Focus Crush terminal' },
+      },
     }
 <
 
@@ -44,15 +52,18 @@ Using packer.nvim: >lua
       'taigrr/neocrush.nvim',
       config = function()
         require('neocrush').setup()
+        vim.keymap.set('n', '<leader>cc', '<cmd>CrushToggle<cr>')
+        vim.keymap.set('n', '<leader>cf', '<cmd>CrushFocus<cr>')
       end,
     }
 <
 
 ==============================================================================
-4. CONFIGURATION                                 *neocrush-configuration*
+4. CONFIGURATION                                     *neocrush-configuration*
 
+                                                           *neocrush.setup()*
 Call `setup()` with a configuration table: >lua
-    require('neocrush').setup {
+    require('neocrush').setup({
       -- Highlight group for edit flash effect
       highlight_group = 'IncSearch',
 
@@ -67,25 +78,29 @@ Call `setup()` with a configuration table: >lua
 
       -- Command to run in terminal
       terminal_cmd = 'crush',
-
-      -- Enable default keymaps (true, false, or table of overrides)
-      keymaps = true,
-    }
+    })
 <
 
-Keymap configuration examples: >lua
-    -- Disable all keymaps
-    keymaps = false,
+                                                          *neocrush.Config*
+Configuration options:
 
-    -- Override specific keymaps
-    keymaps = {
-      ['<leader>cc'] = '<leader>ct',  -- Change toggle keymap
-      ['<leader>cf'] = false,          -- Disable focus keymap
-    },
-<
+`highlight_group` (string, default: 'IncSearch')
+    Highlight group used for the flash effect on edited lines.
+
+`highlight_duration` (integer, default: 900)
+    Duration of the flash highlight in milliseconds.
+
+`auto_focus` (boolean, default: true)
+    Automatically focus edited files in the leftmost code window.
+
+`terminal_width` (integer, default: 80)
+    Width of the Crush terminal window in columns.
+
+`terminal_cmd` (string, default: 'crush')
+    Command to run when opening the Crush terminal.
 
 ==============================================================================
-5. COMMANDS                                           *neocrush-commands*
+5. COMMANDS                                               *neocrush-commands*
 
 *:CrushToggle*          Toggle the Crush terminal window (right split)
 *:CrushOpen*            Open the Crush terminal
@@ -95,55 +110,104 @@ Keymap configuration examples: >lua
 *:CrushFocusToggle*     Toggle auto-focus behavior
 *:CrushFocusOn*         Enable auto-focus
 *:CrushFocusOff*        Disable auto-focus
+*:CrushInstallBinaries* Install neocrush and crush binaries via `go install`
+*:CrushUpdateBinaries* Update neocrush and crush binaries to latest version
 
 ==============================================================================
-6. API                                                     *neocrush-api*
+6. API                                                         *neocrush-api*
 
-*neocrush.setup*({opts})                          *neocrush.setup()*
-    Initialize the plugin with the given configuration.
+All functions are available via `require('neocrush')`.
 
-*neocrush.toggle*()                               *neocrush.toggle()*
+TERMINAL MANAGEMENT ~
+
+*neocrush.toggle()*
     Toggle the Crush terminal window.
 
-*neocrush.open*()                                 *neocrush.open()*
-    Open the Crush terminal.
+*neocrush.open()*
+    Open the Crush terminal. If already open, focuses it.
 
-*neocrush.close*()                                *neocrush.close()*
-    Close the Crush terminal.
+*neocrush.close()*
+    Close the Crush terminal window (buffer remains alive).
 
-*neocrush.focus*()                                *neocrush.focus()*
+*neocrush.focus()*
     Focus the Crush terminal (opens if not visible).
 
-*neocrush.set_width*({width})                     *neocrush.set_width()*
-    Set the terminal width.
+*neocrush.set_width*({width})
+    Set the terminal width to {width} columns.
 
-*neocrush.toggle_auto_focus*()                    *neocrush.toggle_auto_focus()*
+    Parameters: ~
+        {width}  (integer) Width in columns
+
+AUTO-FOCUS CONTROL ~
+
+*neocrush.toggle_auto_focus()*
     Toggle auto-focus behavior.
 
-*neocrush.enable_auto_focus*()                    *neocrush.enable_auto_focus()*
+*neocrush.enable_auto_focus()*
     Enable auto-focus.
 
-*neocrush.disable_auto_focus*()                   *neocrush.disable_auto_focus()*
+*neocrush.disable_auto_focus()*
     Disable auto-focus.
 
-*neocrush.is_auto_focus_enabled*()                *neocrush.is_auto_focus_enabled()*
-    Returns true if auto-focus is enabled.
+*neocrush.is_auto_focus_enabled()*
+    Check if auto-focus is enabled.
 
-*neocrush.start_lsp*({opts})                      *neocrush.start_lsp()*
-    Manually start the neocrush client. Options:
-    - root_dir: Override the root directory
-    - on_attach: Additional on_attach callback
+    Returns: ~
+        (boolean) True if auto-focus is enabled
 
-*neocrush.get_client*()                           *neocrush.get_client()*
-    Get the neocrush client instance (or nil if not running).
+LSP MANAGEMENT ~
+
+*neocrush.start_lsp*({opts})
+    Start the neocrush LSP client.
+
+    Parameters: ~
+        {opts}  (table|nil) Optional configuration:
+                - root_dir: Override the root directory
+                - on_attach: Additional on_attach callback
+
+    Returns: ~
+        (integer|nil) LSP client ID or nil if failed
+
+*neocrush.get_client()*
+    Get the neocrush LSP client instance.
+
+    Returns: ~
+        (vim.lsp.Client|nil) The client or nil if not running
 
 ==============================================================================
-7. KEYMAPS                                             *neocrush-keymaps*
+7. KEYMAPS                                                 *neocrush-keymaps*
 
-Default keymaps (can be disabled or customized via config):
+The plugin does not set any keymaps by default.
+Add your own keymaps in your configuration: >lua
 
-    <leader>cc    Toggle Crush terminal
-    <leader>cf    Focus Crush terminal
+    vim.keymap.set('n', '<leader>cc', '<cmd>CrushToggle<cr>',
+      { desc = 'Toggle Crush terminal' })
+    vim.keymap.set('n', '<leader>cf', '<cmd>CrushFocus<cr>',
+      { desc = 'Focus Crush terminal' })
+<
+
+With lazy.nvim, use the `keys` option: >lua
+
+    {
+      'taigrr/neocrush.nvim',
+      keys = {
+        { '<leader>cc', '<cmd>CrushToggle<cr>', desc = 'Toggle Crush terminal' },
+        { '<leader>cf', '<cmd>CrushFocus<cr>', desc = 'Focus Crush terminal' },
+      },
+    }
+<
+
+==============================================================================
+8. HEALTH CHECK                                             *neocrush-health*
+
+Run `:checkhealth neocrush` to verify your setup.
+
+The health check will verify:
+- Neovim version (>= 0.10 required)
+- neocrush binary availability
+- crush CLI availability (optional)
+- Go availability (for install/update commands)
+- LSP client status
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:
