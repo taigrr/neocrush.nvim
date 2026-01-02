@@ -160,23 +160,9 @@ local function ensure_buffer_visible(bufnr)
     return wins[1]
   end
 
-  -- Find the leftmost non-special window
-  local all_wins = vim.api.nvim_tabpage_list_wins(0)
-  local candidates = {}
-
-  for _, win in ipairs(all_wins) do
-    if not is_crush_window(win) and is_file_window(win) then
-      local pos = vim.api.nvim_win_get_position(win)
-      table.insert(candidates, { win = win, col = pos[2] })
-    end
-  end
-
-  if #candidates > 0 then
-    -- Sort by column (leftmost first)
-    table.sort(candidates, function(a, b)
-      return a.col < b.col
-    end)
-    local target_win = candidates[1].win
+  -- Try to reuse an existing file window
+  local target_win = find_edit_target_window()
+  if target_win then
     local ok = pcall(vim.api.nvim_win_set_buf, target_win, bufnr)
     if ok then
       return target_win
@@ -184,7 +170,6 @@ local function ensure_buffer_visible(bufnr)
   end
 
   -- No suitable window found, create a new window with the target buffer
-  -- Use enew + set_buf to avoid issues when current window is terminal/nofile
   local width = math.floor(vim.o.columns / 2)
   vim.cmd 'topleft vnew'
   local new_win = vim.api.nvim_get_current_win()
@@ -211,8 +196,8 @@ local function install_apply_edit_handler()
   original_handler = vim.lsp.handlers['workspace/applyEdit']
 
   vim.lsp.handlers['workspace/applyEdit'] = function(err, result, ctx, conf)
-    local client = vim.lsp.get_client_by_id(ctx.client_id) or {}
-    local is_crush = client and client.name == 'neocrush'
+    local client = vim.lsp.get_client_by_id(ctx.client_id)
+    local is_crush = client ~= nil and client.name == 'neocrush'
 
     if is_crush and result and result.edit then
       -- Save current window/buffer state before edit
@@ -224,8 +209,7 @@ local function install_apply_edit_handler()
       vim.o.swapfile = false
 
       -- Apply edit silently (without the "Workspace edit" notification)
-      local offset_encoding = client.offset_encoding or 'utf-16'
-      local ok, applied = pcall(vim.lsp.util.apply_workspace_edit, result.edit, offset_encoding)
+      local ok, applied = pcall(vim.lsp.util.apply_workspace_edit, result.edit, client.offset_encoding or 'utf-16')
 
       vim.o.swapfile = swapfile
 
