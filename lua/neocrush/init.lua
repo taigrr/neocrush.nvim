@@ -48,7 +48,7 @@ local default_config = {
 }
 
 ---@type neocrush.Config
-local config = {}
+local config = vim.deepcopy(default_config)
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -126,7 +126,13 @@ local function flash_range(bufnr, start_line, end_line)
   vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
   for line = start_line, end_line - 1 do
-    vim.api.nvim_buf_add_highlight(bufnr, ns, config.highlight_group, line, 0, -1)
+    vim.api.nvim_buf_set_extmark(bufnr, ns, line, 0, {
+      end_row = line,
+      end_col = 0,
+      hl_group = config.highlight_group,
+      hl_eol = true,
+      line_hl_group = config.highlight_group,
+    })
   end
 
   vim.defer_fn(function()
@@ -205,7 +211,7 @@ local function install_apply_edit_handler()
   original_handler = vim.lsp.handlers['workspace/applyEdit']
 
   vim.lsp.handlers['workspace/applyEdit'] = function(err, result, ctx, conf)
-    local client = vim.lsp.get_client_by_id(ctx.client_id)
+    local client = vim.lsp.get_client_by_id(ctx.client_id) or {}
     local is_crush = client and client.name == 'neocrush'
 
     if is_crush and result and result.edit then
@@ -218,7 +224,8 @@ local function install_apply_edit_handler()
       vim.o.swapfile = false
 
       -- Apply edit silently (without the "Workspace edit" notification)
-      local ok, applied = pcall(vim.lsp.util.apply_workspace_edit, result.edit, client.offset_encoding or 'utf-16')
+      local offset_encoding = client.offset_encoding or 'utf-16'
+      local ok, applied = pcall(vim.lsp.util.apply_workspace_edit, result.edit, offset_encoding)
 
       vim.o.swapfile = swapfile
 
