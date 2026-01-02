@@ -70,32 +70,88 @@ require('neocrush').setup({
 
   -- Command to run in terminal
   terminal_cmd = 'crush',
+
+  -- Optional keybindings (none set by default)
+  keys = {
+    toggle = '<leader>cc',   -- Toggle Crush terminal
+    focus = '<leader>cf',    -- Focus Crush terminal
+    logs = '<leader>cl',     -- Show Crush logs
+    cancel = '<leader>cx',   -- Cancel current operation
+    restart = '<leader>cr',  -- Restart Crush terminal
+    paste = '<leader>cp',    -- Paste into Crush (normal and visual mode)
+  },
 })
 ```
 
 ## Commands
 
-| Command                 | Description                                       |
-| ----------------------- | ------------------------------------------------- |
-| `:CrushToggle`          | Toggle the Crush terminal window                  |
-| `:CrushOpen`            | Open the Crush terminal                           |
-| `:CrushClose`           | Close the Crush terminal (keeps buffer)           |
-| `:CrushFocus`           | Focus the Crush terminal                          |
-| `:CrushWidth <n>`       | Set terminal width to n columns                   |
-| `:CrushFocusToggle`     | Toggle auto-focus behavior                        |
-| `:CrushFocusOn`         | Enable auto-focus                                 |
-| `:CrushFocusOff`        | Disable auto-focus                                |
-| `:CrushInstallBinaries` | Install neocrush and crush binaries (requires Go) |
-| `:CrushUpdateBinaries`  | Update neocrush and crush binaries (requires Go)  |
+| Command                 | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| `:CrushToggle`          | Toggle the Crush terminal window                   |
+| `:CrushOpen`            | Open the Crush terminal                            |
+| `:CrushClose`           | Close the Crush terminal (keeps buffer)            |
+| `:CrushFocus`           | Focus the Crush terminal                           |
+| `:CrushWidth <n>`       | Set terminal width to n columns                    |
+| `:CrushFocusToggle`     | Toggle auto-focus behavior                         |
+| `:CrushFocusOn`         | Enable auto-focus                                  |
+| `:CrushFocusOff`        | Disable auto-focus                                 |
+| `:CrushInstallBinaries` | Install neocrush and crush binaries (requires Go)  |
+| `:CrushUpdateBinaries`  | Update neocrush and crush binaries (requires Go)   |
+| `:CrushLogs`            | Show Crush logs in a new buffer                    |
+| `:CrushCancel`          | Cancel current operation (sends `<Esc><Esc>`)      |
+| `:CrushRestart`         | Kill and restart the Crush terminal                |
+| `:CrushPaste [reg]`     | Paste register or visual selection into terminal   |
 
 ## Suggested Keymaps
 
 The plugin does not set any keymaps by default.
-Add these to your configuration:
+You can configure keymaps via the `keys` option in setup:
+
+```lua
+require('neocrush').setup({
+  keys = {
+    toggle = '<leader>cc',   -- Toggle Crush terminal
+    focus = '<leader>cf',    -- Focus Crush terminal
+    logs = '<leader>cl',     -- Show Crush logs
+    cancel = '<leader>cx',   -- Cancel current operation
+    restart = '<leader>cr',  -- Restart Crush terminal
+    paste = '<leader>cp',    -- Paste into Crush (works in normal and visual mode)
+  },
+})
+```
+
+Or set them manually:
 
 ```lua
 vim.keymap.set('n', '<leader>cc', '<cmd>CrushToggle<cr>', { desc = 'Toggle Crush terminal' })
 vim.keymap.set('n', '<leader>cf', '<cmd>CrushFocus<cr>', { desc = 'Focus Crush terminal' })
+vim.keymap.set('n', '<leader>cl', '<cmd>CrushLogs<cr>', { desc = 'Show Crush logs' })
+vim.keymap.set('n', '<leader>cx', '<cmd>CrushCancel<cr>', { desc = 'Cancel Crush operation' })
+vim.keymap.set('n', '<leader>cr', '<cmd>CrushRestart<cr>', { desc = 'Restart Crush terminal' })
+vim.keymap.set('n', '<leader>cp', '<cmd>CrushPaste<cr>', { desc = 'Paste clipboard into Crush' })
+vim.keymap.set('v', '<leader>cp', '<cmd>CrushPaste<cr>', { desc = 'Paste selection into Crush' })
+```
+
+### Pasting Specific Registers
+
+`:CrushPaste` accepts an optional register argument.
+To paste from a specific register, use `:CrushPaste <register>`:
+
+```lua
+-- Paste from register "a"
+vim.keymap.set('n', '<leader>cpa', '<cmd>CrushPaste a<cr>', { desc = 'Paste register a into Crush' })
+
+-- Paste from register "c"
+vim.keymap.set('n', '<leader>cpc', '<cmd>CrushPaste c<cr>', { desc = 'Paste register c into Crush' })
+
+-- Paste from unnamed register (last yank/delete)
+vim.keymap.set('n', '<leader>cp"', '<cmd>CrushPaste "<cr>', { desc = 'Paste unnamed register into Crush' })
+
+-- Paste from system clipboard (default behavior)
+vim.keymap.set('n', '<leader>cp+', '<cmd>CrushPaste +<cr>', { desc = 'Paste clipboard into Crush' })
+
+-- Paste from primary selection (X11)
+vim.keymap.set('n', '<leader>cp*', '<cmd>CrushPaste *<cr>', { desc = 'Paste primary selection into Crush' })
 ```
 
 Or with lazy.nvim's `keys` option (see Installation above).
@@ -111,6 +167,14 @@ crush.open()                -- Open terminal
 crush.close()               -- Close terminal
 crush.focus()               -- Focus terminal
 crush.set_width(100)        -- Set terminal width
+
+-- Terminal operations
+crush.logs()                -- Show logs in new buffer
+crush.cancel()              -- Cancel current operation (<Esc><Esc>)
+crush.restart()             -- Kill and restart terminal
+crush.paste()               -- Paste system clipboard into terminal
+crush.paste('a')            -- Paste register "a" into terminal
+crush.paste_selection()     -- Paste visual selection into terminal
 
 -- Auto-focus control
 crush.toggle_auto_focus()   -- Toggle auto-focus

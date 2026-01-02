@@ -15,6 +15,10 @@
 ---   :CrushFocusToggle/On/Off - Control auto-focus behavior
 ---   :CrushInstallBinaries   - Install neocrush and crush binaries
 ---   :CrushUpdateBinaries    - Update neocrush and crush binaries
+---   :CrushLogs              - Show Crush logs in a new buffer
+---   :CrushCancel            - Cancel current operation (sends <Esc><Esc>)
+---   :CrushRestart           - Kill and restart Crush terminal
+---   :CrushPaste [reg]       - Paste register or selection into terminal
 ---@brief ]]
 
 local M = {}
@@ -29,10 +33,19 @@ local M = {}
 ---@field auto_focus boolean Auto-focus edited files in leftmost window
 ---@field terminal_width integer Terminal width in columns
 ---@field terminal_cmd string Command to run in terminal (default: 'crush')
+---@field keys? neocrush.Keys Optional keybindings to set up
 
 ---@class neocrush.LspStartOpts
 ---@field root_dir? string Override the root directory for the LSP server
 ---@field on_attach? fun(client: vim.lsp.Client, bufnr: integer) Additional on_attach callback
+
+---@class neocrush.Keys
+---@field toggle? string Keymap for :CrushToggle
+---@field focus? string Keymap for :CrushFocus
+---@field logs? string Keymap for :CrushLogs
+---@field cancel? string Keymap for :CrushCancel
+---@field restart? string Keymap for :CrushRestart
+---@field paste? string Keymap for :CrushPaste
 
 -------------------------------------------------------------------------------
 -- Default Configuration
@@ -237,7 +250,7 @@ local function install_apply_edit_handler()
         end
       end
 
-      -- Flash highlight the changes
+      -- Flash highlight the changes and scroll into view
       for uri, edits in pairs(edits_by_uri) do
         local bufnr = vim.uri_to_bufnr(uri)
 
@@ -247,13 +260,21 @@ local function install_apply_edit_handler()
         end
 
         -- Ensure buffer is visible (this may create a split)
-        ensure_buffer_visible(bufnr)
+        local win = ensure_buffer_visible(bufnr)
 
         for _, edit in ipairs(edits) do
           local start_line = edit.range.start.line
           local end_line = edit.range['end'].line
           local new_lines = vim.split(edit.newText or '', '\n', { plain = true })
           local actual_end = start_line + #new_lines
+
+          -- Scroll the edit into view before highlighting
+          if win and vim.api.nvim_win_is_valid(win) then
+            vim.api.nvim_win_set_cursor(win, { start_line + 1, 0 })
+            vim.api.nvim_win_call(win, function()
+              vim.cmd 'normal! zz'
+            end)
+          end
 
           flash_range(bufnr, start_line, math.max(actual_end, end_line + 1))
         end
@@ -500,6 +521,135 @@ function M.set_width(width)
   end
 end
 
+--- Run `crush logs` and load the output into a new buffer.
+function M.logs()
+  vim.fn.jobstart({ 'crush', 'logs' }, {
+    stdout_buffered = true,
+    stderr_buffered = true,
+    on_stdout = function(_, data)
+      if data and #data > 0 and (data[1] ~= '' or #data > 1) then
+        vim.schedule(function()
+          local buf = vim.api.nvim_create_buf(false, true)
+          vim.api.nvim_buf_set_lines(buf, 0, -1, false, data)
+          vim.bo[buf].buftype = 'nofile'
+          vim.bo[buf].bufhidden = 'wipe'
+          vim.bo[buf].swapfile = false
+          vim.bo[buf].filetype = 'markdown'
+          vim.api.nvim_buf_set_name(buf, 'Crush Logs')
+
+          local target_win = find_edit_target_window()
+          if target_win then
+            vim.api.nvim_win_set_buf(target_win, buf)
+          else
+            vim.cmd 'topleft vnew'
+            local new_win = vim.api.nvim_get_current_win()
+            vim.api.nvim_win_set_buf(new_win, buf)
+          end
+        end)
+      end
+    end,
+    on_stderr = function(_, data)
+      if data and #data > 0 and data[1] ~= '' then
+        vim.schedule(function()
+          vim.notify('crush logs error: ' .. table.concat(data, '\n'), vim.log.levels.ERROR)
+        end)
+      end
+    end,
+  })
+end
+
+--- Send escape sequence to cancel the current Crush operation.
+--- Sends <Esc><Esc> to the Crush terminal buffer.
+function M.cancel()
+  if not crush_buf or not vim.api.nvim_buf_is_valid(crush_buf) then
+    vim.notify('Crush terminal not running', vim.log.levels.WARN)
+    return
+  end
+
+  local term_chan = vim.bo[crush_buf].channel
+  if term_chan == 0 then
+    vim.notify('Crush terminal channel not found', vim.log.levels.WARN)
+    return
+  end
+
+  vim.api.nvim_chan_send(term_chan, '\27')
+  vim.defer_fn(function()
+    if crush_buf and vim.api.nvim_buf_is_valid(crush_buf) then
+      local chan = vim.bo[crush_buf].channel
+      if chan and chan ~= 0 then
+        vim.api.nvim_chan_send(chan, '\27')
+      end
+    end
+  end, 50)
+end
+
+--- Restart the Crush terminal by killing the current process and starting a new one.
+function M.restart()
+  if crush_buf and vim.api.nvim_buf_is_valid(crush_buf) then
+    local term_chan = vim.bo[crush_buf].channel
+    if term_chan and term_chan ~= 0 then
+      vim.fn.jobstop(term_chan)
+    end
+    vim.api.nvim_buf_delete(crush_buf, { force = true })
+    crush_buf = nil
+  end
+
+  if crush_win and vim.api.nvim_win_is_valid(crush_win) then
+    vim.api.nvim_win_close(crush_win, true)
+    crush_win = nil
+  end
+
+  M.open()
+end
+
+--- Paste text into the Crush terminal.
+--- Can paste from a register or the current visual selection.
+---@param register? string Register to paste from (default: '+' for system clipboard)
+function M.paste(register)
+  if not crush_buf or not vim.api.nvim_buf_is_valid(crush_buf) then
+    vim.notify('Crush terminal not running', vim.log.levels.WARN)
+    return
+  end
+
+  local term_chan = vim.bo[crush_buf].channel
+  if term_chan == 0 then
+    vim.notify('Crush terminal channel not found', vim.log.levels.WARN)
+    return
+  end
+
+  register = register or '+'
+  local content = vim.fn.getreg(register)
+
+  if content == '' then
+    vim.notify('Register "' .. register .. '" is empty', vim.log.levels.WARN)
+    return
+  end
+
+  vim.api.nvim_chan_send(term_chan, content)
+end
+
+--- Paste the current visual selection into the Crush terminal.
+function M.paste_selection()
+  if not crush_buf or not vim.api.nvim_buf_is_valid(crush_buf) then
+    vim.notify('Crush terminal not running', vim.log.levels.WARN)
+    return
+  end
+
+  local term_chan = vim.bo[crush_buf].channel
+  if term_chan == 0 then
+    vim.notify('Crush terminal channel not found', vim.log.levels.WARN)
+    return
+  end
+
+  local text = get_visual_selection_text()
+  if not text or text == '' then
+    vim.notify('No visual selection', vim.log.levels.WARN)
+    return
+  end
+
+  vim.api.nvim_chan_send(term_chan, text)
+end
+
 -------------------------------------------------------------------------------
 -- Public API: LSP Client Management
 -------------------------------------------------------------------------------
@@ -598,6 +748,28 @@ local function create_commands()
   vim.api.nvim_create_user_command('CrushUpdateBinaries', function()
     require('neocrush.install').update_all()
   end, { desc = 'Update neocrush and crush binaries' })
+
+  vim.api.nvim_create_user_command('CrushLogs', function()
+    M.logs()
+  end, { desc = 'Show Crush logs in a new buffer' })
+
+  vim.api.nvim_create_user_command('CrushCancel', function()
+    M.cancel()
+  end, { desc = 'Cancel current Crush operation (sends <Esc><Esc>)' })
+
+  vim.api.nvim_create_user_command('CrushRestart', function()
+    M.restart()
+  end, { desc = 'Kill and restart the Crush terminal' })
+
+  vim.api.nvim_create_user_command('CrushPaste', function(opts)
+    if opts.range > 0 then
+      M.paste_selection()
+    elseif opts.args ~= '' then
+      M.paste(opts.args)
+    else
+      M.paste()
+    end
+  end, { nargs = '?', range = true, desc = 'Paste register or selection into Crush terminal' })
 end
 
 --- Set up LSP attach autocmds for cursor/selection sync.
@@ -651,6 +823,30 @@ local function setup_early_start()
   })
 end
 
+--- Set up user-defined keybindings.
+---@param keys neocrush.Keys Keybinding configuration
+local function setup_keybindings(keys)
+  if keys.toggle then
+    vim.keymap.set('n', keys.toggle, '<cmd>CrushToggle<cr>', { desc = 'Toggle Crush terminal' })
+  end
+  if keys.focus then
+    vim.keymap.set('n', keys.focus, '<cmd>CrushFocus<cr>', { desc = 'Focus Crush terminal' })
+  end
+  if keys.logs then
+    vim.keymap.set('n', keys.logs, '<cmd>CrushLogs<cr>', { desc = 'Show Crush logs' })
+  end
+  if keys.cancel then
+    vim.keymap.set('n', keys.cancel, '<cmd>CrushCancel<cr>', { desc = 'Cancel Crush operation' })
+  end
+  if keys.restart then
+    vim.keymap.set('n', keys.restart, '<cmd>CrushRestart<cr>', { desc = 'Restart Crush terminal' })
+  end
+  if keys.paste then
+    vim.keymap.set('n', keys.paste, '<cmd>CrushPaste<cr>', { desc = 'Paste clipboard into Crush' })
+    vim.keymap.set('v', keys.paste, '<cmd>CrushPaste<cr>', { desc = 'Paste selection into Crush' })
+  end
+end
+
 --- Initialize the neocrush plugin.
 ---@param opts? neocrush.Config Configuration options
 function M.setup(opts)
@@ -660,6 +856,10 @@ function M.setup(opts)
   create_commands()
   setup_lsp_attach()
   setup_early_start()
+
+  if opts and opts.keys then
+    setup_keybindings(opts.keys)
+  end
 end
 
 -------------------------------------------------------------------------------
