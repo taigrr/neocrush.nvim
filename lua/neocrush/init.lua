@@ -1,5 +1,6 @@
 ---@brief [[
 --- neocrush.nvim - Neovim plugin for neocrush LSP integration
+--- Test edit #28
 ---
 --- Features:
 ---   - Flash highlights on AI edits (like yank highlight)
@@ -198,6 +199,106 @@ end
 local original_handler = nil
 local handler_installed = false
 
+--- The workspace/applyEdit handler for neocrush.
+--- Handles flash highlighting and buffer display.
+---@param err any
+---@param result any
+---@param ctx any
+---@param conf any
+local function apply_edit_handler(err, result, ctx, conf)
+  local client = vim.lsp.get_client_by_id(ctx.client_id)
+  local is_crush = client ~= nil and client.name == 'neocrush'
+
+  if is_crush and result and result.edit then
+    -- Save current window/buffer state before edit
+    local original_win = vim.api.nvim_get_current_win()
+    local original_buf = vim.api.nvim_win_get_buf(original_win)
+
+    -- Suppress swap file prompts (E325) during the edit
+    local swapfile = vim.o.swapfile
+    vim.o.swapfile = false
+
+    -- Apply edit silently (without the "Workspace edit" notification)
+    local ok, applied = pcall(vim.lsp.util.apply_workspace_edit, result.edit, client.offset_encoding or 'utf-16')
+
+    vim.o.swapfile = swapfile
+
+    if not ok then
+      vim.notify('apply_workspace_edit failed: ' .. tostring(applied), vim.log.levels.ERROR)
+      return { applied = false }
+    end
+
+    -- Collect edits from either changes or documentChanges format
+    local edits_by_uri = {}
+
+    if result.edit.changes then
+      -- Simple format: { [uri]: TextEdit[] }
+      for uri, text_edits in pairs(result.edit.changes) do
+        edits_by_uri[uri] = text_edits
+      end
+    elseif result.edit.documentChanges then
+      -- Versioned format: TextDocumentEdit[] or (TextDocumentEdit | CreateFile | RenameFile | DeleteFile)[]
+      for _, change in ipairs(result.edit.documentChanges) do
+        if change.textDocument and change.edits then
+          -- TextDocumentEdit
+          local uri = change.textDocument.uri
+          edits_by_uri[uri] = change.edits
+        end
+      end
+    end
+
+    -- Flash highlight the changes and scroll into view
+    for uri, edits in pairs(edits_by_uri) do
+      local bufnr = vim.uri_to_bufnr(uri)
+
+      -- Load buffer if needed (suppress E325 prompts)
+      if not vim.api.nvim_buf_is_loaded(bufnr) then
+        pcall(vim.fn.bufload, bufnr)
+      end
+
+      -- Ensure buffer is visible (this may create a split)
+      local win = ensure_buffer_visible(bufnr)
+
+      for _, edit in ipairs(edits) do
+        local start_line = edit.range.start.line
+        local end_line = edit.range['end'].line
+        local new_lines = vim.split(edit.newText or '', '\n', { plain = true })
+        local actual_end = start_line + #new_lines
+
+        -- Scroll the edit into view before highlighting
+        if win and vim.api.nvim_win_is_valid(win) then
+          vim.api.nvim_win_set_cursor(win, { start_line + 1, 0 })
+          vim.api.nvim_win_call(win, function()
+            vim.cmd 'normal! zz'
+          end)
+        end
+
+        flash_range(bufnr, start_line, math.max(actual_end, end_line + 1))
+      end
+    end
+
+    -- Restore focus if original window's buffer wasn't replaced
+    -- (i.e., the edit went to a different window)
+    if vim.api.nvim_win_is_valid(original_win) then
+      local current_buf_in_original_win = vim.api.nvim_win_get_buf(original_win)
+      if current_buf_in_original_win == original_buf then
+        -- Original window still has its original buffer, restore focus
+        vim.api.nvim_set_current_win(original_win)
+      end
+      -- If buffer was replaced, focus is already on the edit (do nothing)
+    end
+
+    return { applied = applied }
+  end
+
+  -- For non-neocrush clients, use the original handler
+  if original_handler then
+    return original_handler(err, result, ctx, conf)
+  end
+  -- Fallback: use default behavior
+  return vim.lsp.util.apply_workspace_edit(result.edit, 'utf-16')
+end
+
 --- Install the workspace/applyEdit handler override.
 --- This intercepts edits from neocrush to add flash highlighting
 --- and suppress the default "Workspace edit" notification.
@@ -207,97 +308,7 @@ local function install_apply_edit_handler()
   end
 
   original_handler = vim.lsp.handlers['workspace/applyEdit']
-
-  vim.lsp.handlers['workspace/applyEdit'] = function(err, result, ctx, conf)
-    local client = vim.lsp.get_client_by_id(ctx.client_id)
-    local is_crush = client ~= nil and client.name == 'neocrush'
-
-    if is_crush and result and result.edit then
-      -- Save current window/buffer state before edit
-      local original_win = vim.api.nvim_get_current_win()
-      local original_buf = vim.api.nvim_win_get_buf(original_win)
-
-      -- Suppress swap file prompts (E325) during the edit
-      local swapfile = vim.o.swapfile
-      vim.o.swapfile = false
-
-      -- Apply edit silently (without the "Workspace edit" notification)
-      local ok, applied = pcall(vim.lsp.util.apply_workspace_edit, result.edit, client.offset_encoding or 'utf-16')
-
-      vim.o.swapfile = swapfile
-
-      if not ok then
-        vim.notify('apply_workspace_edit failed: ' .. tostring(applied), vim.log.levels.ERROR)
-        return { applied = false }
-      end
-
-      -- Collect edits from either changes or documentChanges format
-      local edits_by_uri = {}
-
-      if result.edit.changes then
-        -- Simple format: { [uri]: TextEdit[] }
-        for uri, text_edits in pairs(result.edit.changes) do
-          edits_by_uri[uri] = text_edits
-        end
-      elseif result.edit.documentChanges then
-        -- Versioned format: TextDocumentEdit[] or (TextDocumentEdit | CreateFile | RenameFile | DeleteFile)[]
-        for _, change in ipairs(result.edit.documentChanges) do
-          if change.textDocument and change.edits then
-            -- TextDocumentEdit
-            local uri = change.textDocument.uri
-            edits_by_uri[uri] = change.edits
-          end
-        end
-      end
-
-      -- Flash highlight the changes and scroll into view
-      for uri, edits in pairs(edits_by_uri) do
-        local bufnr = vim.uri_to_bufnr(uri)
-
-        -- Load buffer if needed (suppress E325 prompts)
-        if not vim.api.nvim_buf_is_loaded(bufnr) then
-          pcall(vim.fn.bufload, bufnr)
-        end
-
-        -- Ensure buffer is visible (this may create a split)
-        local win = ensure_buffer_visible(bufnr)
-
-        for _, edit in ipairs(edits) do
-          local start_line = edit.range.start.line
-          local end_line = edit.range['end'].line
-          local new_lines = vim.split(edit.newText or '', '\n', { plain = true })
-          local actual_end = start_line + #new_lines
-
-          -- Scroll the edit into view before highlighting
-          if win and vim.api.nvim_win_is_valid(win) then
-            vim.api.nvim_win_set_cursor(win, { start_line + 1, 0 })
-            vim.api.nvim_win_call(win, function()
-              vim.cmd 'normal! zz'
-            end)
-          end
-
-          flash_range(bufnr, start_line, math.max(actual_end, end_line + 1))
-        end
-      end
-
-      -- Restore focus if original window's buffer wasn't replaced
-      -- (i.e., the edit went to a different window)
-      if vim.api.nvim_win_is_valid(original_win) then
-        local current_buf_in_original_win = vim.api.nvim_win_get_buf(original_win)
-        if current_buf_in_original_win == original_buf then
-          -- Original window still has its original buffer, restore focus
-          vim.api.nvim_set_current_win(original_win)
-        end
-        -- If buffer was replaced, focus is already on the edit (do nothing)
-      end
-
-      return { applied = applied }
-    end
-
-    -- For non-neocrush clients, use the original handler
-    return original_handler(err, result, ctx, conf)
-  end
-
+  vim.lsp.handlers['workspace/applyEdit'] = apply_edit_handler
   handler_installed = true
 end
 
@@ -681,6 +692,9 @@ function M.start_lsp(opts)
     name = 'neocrush',
     cmd = { 'neocrush' },
     root_dir = root_dir,
+    handlers = {
+      ['workspace/applyEdit'] = apply_edit_handler,
+    },
     on_attach = function(client, bufnr)
       setup_cursor_sync(client, bufnr)
       setup_selection_sync(client, bufnr)
@@ -843,7 +857,7 @@ local function setup_keybindings(keys)
   end
   if keys.paste then
     vim.keymap.set('n', keys.paste, '<cmd>CrushPaste<cr>', { desc = 'Paste clipboard into Crush' })
-    vim.keymap.set('v', keys.paste, '<cmd>CrushPaste<cr>', { desc = 'Paste selection into Crush' })
+    vim.keymap.set('v', keys.paste, ':CrushPaste<cr>', { desc = 'Paste selection into Crush' })
   end
 end
 
@@ -869,5 +883,8 @@ end
 M._is_file_window = is_file_window
 M._find_edit_target_window = find_edit_target_window
 M._flash_range = flash_range
+M._is_handler_installed = function()
+  return handler_installed
+end
 
 return M

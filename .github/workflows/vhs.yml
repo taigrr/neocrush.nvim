@@ -1,0 +1,44 @@
+name: Generate Demo GIFs
+
+# Disabled until ready for production use
+# on:
+#   push:
+#     branches: [master, main]
+#     paths:
+#       - 'demo/*.tape'
+#       - 'scripts/vhs_init.lua'
+#       - '.github/workflows/vhs.yml'
+#   workflow_dispatch:
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    name: Generate GIFs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Generate demo.gif
+        uses: charmbracelet/vhs-action@v2
+        with:
+          path: demo/demo.tape
+        env:
+          PLUGIN_PATH: ${{ github.workspace }}
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add assets/
+          git diff --staged --quiet || git commit -m "chore: update demo gifs [skip ci]"
+          git push

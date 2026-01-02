@@ -26,7 +26,7 @@ function M.check()
   else
     vim.health.error('neocrush binary not found', {
       'Install with :CrushInstallBinaries (requires Go)',
-      'Or manually: go install github.com/taigrr/neocrush@latest',
+      'Or manually: go install github.com/taigrr/neocrush/cmd/neocrush@latest',
       'See: https://github.com/taigrr/neocrush',
     })
   end

@@ -2,6 +2,8 @@
 
 Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 
+![Demo](assets/demo.gif)
+
 ## Features
 
 - **Edit Highlighting**: Flash highlights on AI-generated edits (like yank highlight)

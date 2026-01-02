@@ -1,4 +1,4 @@
-.PHONY: test lint
+.PHONY: test lint format demo
 
 test:
 	nvim --headless --noplugin -u scripts/minimal_init.vim \
@@ -6,3 +6,11 @@ test:
 
 lint:
 	stylua --check lua/
+
+format:
+	stylua lua/ tests/
+
+# Generate demo GIFs locally
+# Requires: brew install vhs
+demo:
+	PLUGIN_PATH=$(PWD) vhs demo/demo.tape

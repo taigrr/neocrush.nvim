@@ -6,7 +6,7 @@
 local M = {}
 
 local BINARIES = {
-  neocrush = 'github.com/taigrr/neocrush',
+  neocrush = 'github.com/taigrr/neocrush/cmd/neocrush',
   crush = 'github.com/charmbracelet/crush',
 }
 
