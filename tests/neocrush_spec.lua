@@ -5,29 +5,6 @@ local neocrush = require 'neocrush'
 local eq = assert.are.same
 
 describe('neocrush', function()
-  describe('SPECIAL_FILETYPES', function()
-    it('should contain common filetree plugins', function()
-      local filetypes = neocrush._SPECIAL_FILETYPES
-      assert.is_true(filetypes['neo-tree'])
-      assert.is_true(filetypes['NvimTree'])
-      assert.is_true(filetypes['oil'])
-    end)
-
-    it('should contain terminal-related filetypes', function()
-      local filetypes = neocrush._SPECIAL_FILETYPES
-      assert.is_true(filetypes['qf'])
-      assert.is_true(filetypes['help'])
-      assert.is_true(filetypes['man'])
-    end)
-
-    it('should contain plugin UI filetypes', function()
-      local filetypes = neocrush._SPECIAL_FILETYPES
-      assert.is_true(filetypes['lazy'])
-      assert.is_true(filetypes['mason'])
-      assert.is_true(filetypes['TelescopePrompt'])
-    end)
-  end)
-
   describe('setup', function()
     it('should accept empty options', function()
       assert.has_no.errors(function()

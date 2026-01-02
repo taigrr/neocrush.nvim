@@ -75,18 +75,18 @@ require('neocrush').setup({
 
 ## Commands
 
-| Command             | Description                             |
-| ------------------- | --------------------------------------- |
-| `:CrushToggle`      | Toggle the Crush terminal window        |
-| `:CrushOpen`        | Open the Crush terminal                 |
-| `:CrushClose`       | Close the Crush terminal (keeps buffer) |
-| `:CrushFocus`       | Focus the Crush terminal                |
-| `:CrushWidth <n>`   | Set terminal width to n columns         |
-| `:CrushFocusToggle` | Toggle auto-focus behavior              |
-| `:CrushFocusOn`     | Enable auto-focus                       |
-| `:CrushFocusOff`    | Disable auto-focus                      |
+| Command                 | Description                                       |
+| ----------------------- | ------------------------------------------------- |
+| `:CrushToggle`          | Toggle the Crush terminal window                  |
+| `:CrushOpen`            | Open the Crush terminal                           |
+| `:CrushClose`           | Close the Crush terminal (keeps buffer)           |
+| `:CrushFocus`           | Focus the Crush terminal                          |
+| `:CrushWidth <n>`       | Set terminal width to n columns                   |
+| `:CrushFocusToggle`     | Toggle auto-focus behavior                        |
+| `:CrushFocusOn`         | Enable auto-focus                                 |
+| `:CrushFocusOff`        | Disable auto-focus                                |
 | `:CrushInstallBinaries` | Install neocrush and crush binaries (requires Go) |
-| `:CrushUpdateBinaries` | Update neocrush and crush binaries (requires Go) |
+| `:CrushUpdateBinaries`  | Update neocrush and crush binaries (requires Go)  |
 
 ## Suggested Keymaps
 
