@@ -156,6 +156,30 @@ local function send_to_quickfix(title, items)
   local qf_items = vim.tbl_map(to_qf_item, items)
   vim.fn.setqflist({}, ' ', { title = title, items = qf_items })
   vim.cmd 'botright copen'
+
+  local qf_buf = vim.api.nvim_get_current_buf()
+  vim.keymap.set('n', '<CR>', function()
+    local idx = vim.fn.line '.'
+    local qf_list = vim.fn.getqflist()
+    local entry = qf_list[idx]
+    if not entry or entry.bufnr == 0 then
+      return
+    end
+
+    local neocrush = require 'neocrush'
+    local target_win = neocrush._find_edit_target_window()
+    local filename = vim.api.nvim_buf_get_name(entry.bufnr)
+
+    if target_win then
+      vim.api.nvim_set_current_win(target_win)
+    else
+      vim.cmd 'topleft vnew'
+    end
+
+    vim.cmd.edit(vim.fn.fnameescape(filename))
+    vim.api.nvim_win_set_cursor(0, { entry.lnum, (entry.col or 1) - 1 })
+    vim.cmd 'normal! zz'
+  end, { buffer = qf_buf, nowait = true })
 end
 
 ---Show locations in custom Telescope picker with notes panel.
