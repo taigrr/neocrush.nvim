@@ -43,7 +43,7 @@ end
 function M.show_quickfix(title, items)
   local qf_items = vim.tbl_map(to_qf_item, items)
   vim.fn.setqflist({}, ' ', { title = title or 'AI Locations', items = qf_items })
-  vim.cmd('botright copen')
+  vim.cmd 'botright copen'
 end
 
 -------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ end
 local function send_to_quickfix(title, items)
   local qf_items = vim.tbl_map(to_qf_item, items)
   vim.fn.setqflist({}, ' ', { title = title, items = qf_items })
-  vim.cmd('botright copen')
+  vim.cmd 'botright copen'
 end
 
 ---Show locations in custom Telescope picker with notes panel.
@@ -248,9 +248,8 @@ function M.show_telescope(title, items)
 
         -- C-q: send all to quickfix
         local function send_all_to_qf()
-          local picker = action_state.get_current_picker(prompt_bufnr)
           close_and_cleanup()
-          send_to_quickfix(picker_title, picker.finder.results)
+          send_to_quickfix(picker_title, items)
         end
         map('i', '<C-q>', send_all_to_qf)
         map('n', '<C-q>', send_all_to_qf)
