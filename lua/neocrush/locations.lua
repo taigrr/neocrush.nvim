@@ -34,7 +34,6 @@ local function to_qf_item(item)
     lnum = item.lnum,
     col = item.col or 1,
     text = text,
-    type = item.type or 'N',
   }
 end
 
@@ -44,7 +43,7 @@ end
 function M.show_quickfix(title, items)
   local qf_items = vim.tbl_map(to_qf_item, items)
   vim.fn.setqflist({}, ' ', { title = title or 'AI Locations', items = qf_items })
-  vim.cmd.copen()
+  vim.cmd('botright copen')
 end
 
 -------------------------------------------------------------------------------
@@ -61,7 +60,7 @@ end
 ---@return table Window configuration options
 local function calc_notes_win_opts(height)
   local ui = vim.api.nvim_list_uis()[1]
-  local width = math.floor(ui.width * 0.88)
+  local width = math.floor(ui.width * 0.9)
   local telescope_height = math.floor(ui.height * 0.7)
   local telescope_top = math.floor((ui.height - telescope_height) / 2)
   local row = telescope_top + telescope_height + 1
@@ -156,7 +155,7 @@ end
 local function send_to_quickfix(title, items)
   local qf_items = vim.tbl_map(to_qf_item, items)
   vim.fn.setqflist({}, ' ', { title = title, items = qf_items })
-  vim.cmd.copen()
+  vim.cmd('botright copen')
 end
 
 ---Show locations in custom Telescope picker with notes panel.
