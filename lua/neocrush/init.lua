@@ -694,6 +694,7 @@ function M.start_lsp(opts)
     root_dir = root_dir,
     handlers = {
       ['workspace/applyEdit'] = apply_edit_handler,
+      ['crush/showLocations'] = require('neocrush.locations').handler,
     },
     on_attach = function(client, bufnr)
       setup_cursor_sync(client, bufnr)

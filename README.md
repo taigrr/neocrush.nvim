@@ -8,6 +8,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 
 - **Edit Highlighting**: Flash highlights on AI-generated edits (like yank highlight)
 - **Auto-focus**: Automatically focus and scroll to edited files
+- **AI Locations Picker**: Custom Telescope picker for AI-annotated code locations with 3-pane UI
 - **Terminal Management**: Toggle/focus/restart Crush terminal
 - **Cursor Sync**: Send cursor position to neocrush for context awareness
 - **Health Check**: Verify setup with `:checkhealth neocrush`
@@ -17,6 +18,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 - Neovim >= 0.10
 - [neocrush](https://github.com/taigrr/neocrush) binary in PATH
 - [crush](https://github.com/charmbracelet/crush) CLI for terminal integration
+- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for AI locations picker
 - Go (for `:CrushInstallBinaries`/`:CrushUpdateBinaries`)
 
 ## Installation
@@ -25,6 +27,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 -- lazy.nvim
 {
   'taigrr/neocrush.nvim',
+  dependencies = { 'nvim-telescope/telescope.nvim' },
   event = 'VeryLazy',
   opts = {
     -- All options are optional with sensible defaults
@@ -107,6 +110,30 @@ crush.get_client()          -- Get LSP client instance
 2. **Edit Handler**: Overrides `workspace/applyEdit` to flash highlight edits and scroll them into view
 3. **Cursor Sync**: Sends `crush/cursorMoved` notifications for context awareness
 4. **Terminal**: Manages a persistent terminal buffer for the Crush CLI
+
+## AI Locations Picker
+
+When an AI agent calls the `show_locations` MCP tool, neocrush displays a custom Telescope picker:
+
+```
+┌─────────────────────┬────────────────────────────┐
+│ file.go:42          │                            │
+│ other.go:15         │   [file preview]           │
+│ > handler.go:88  ◄──│                            │
+│ utils.go:23         │                            │
+├─────────────────────┴────────────────────────────┤
+│ This handler validates user input but doesn't    │
+│ sanitize the email field. Relevant because you   │
+│ asked about potential security issues.           │
+└──────────────────────────────────────────────────┘
+```
+
+**Keybindings:**
+- `<CR>` - Jump to selected location
+- `<C-q>` - Send all locations to quickfix list
+- `<M-q>` - Send selected location to quickfix list
+
+The bottom pane shows the AI's explanation of why each location is relevant to your query.
 
 ## Important Notes
 
