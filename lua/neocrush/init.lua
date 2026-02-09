@@ -209,7 +209,7 @@ local function apply_edit_handler(err, result, ctx, conf)
   local client = vim.lsp.get_client_by_id(ctx.client_id)
   local is_crush = client ~= nil and client.name == 'neocrush'
 
-  if is_crush and result and result.edit then
+  if client and is_crush and result and result.edit then
     -- Save current window/buffer state before edit
     local original_win = vim.api.nvim_get_current_win()
     local original_buf = vim.api.nvim_win_get_buf(original_win)

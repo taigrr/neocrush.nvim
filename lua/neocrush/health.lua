@@ -57,6 +57,17 @@ function M.check()
     })
   end
 
+  -- Check telescope.nvim (optional but recommended)
+  local has_telescope = pcall(require, 'telescope')
+  if has_telescope then
+    vim.health.ok 'telescope.nvim found (AI locations picker enabled)'
+  else
+    vim.health.warn('telescope.nvim not found (AI locations picker will use quickfix fallback)', {
+      'Install telescope.nvim for enhanced AI locations picker',
+      'See: https://github.com/nvim-telescope/telescope.nvim',
+    })
+  end
+
   -- Check LSP client status
   local clients = vim.lsp.get_clients { name = 'neocrush' }
   if #clients > 0 then

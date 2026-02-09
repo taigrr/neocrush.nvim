@@ -111,30 +111,6 @@ crush.get_client()          -- Get LSP client instance
 3. **Cursor Sync**: Sends `crush/cursorMoved` notifications for context awareness
 4. **Terminal**: Manages a persistent terminal buffer for the Crush CLI
 
-## AI Locations Picker
-
-When an AI agent calls the `show_locations` MCP tool, neocrush displays a custom Telescope picker:
-
-```
-┌─────────────────────┬────────────────────────────┐
-│ file.go:42          │                            │
-│ other.go:15         │   [file preview]           │
-│ > handler.go:88  ◄──│                            │
-│ utils.go:23         │                            │
-├─────────────────────┴────────────────────────────┤
-│ This handler validates user input but doesn't    │
-│ sanitize the email field. Relevant because you   │
-│ asked about potential security issues.           │
-└──────────────────────────────────────────────────┘
-```
-
-**Keybindings:**
-- `<CR>` - Jump to selected location
-- `<C-q>` - Send all locations to quickfix list
-- `<M-q>` - Send selected location to quickfix list
-
-The bottom pane shows the AI's explanation of why each location is relevant to your query.
-
 ## Important Notes
 
 **Do NOT add neocrush to Mason/lspconfig.**
