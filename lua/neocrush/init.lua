@@ -498,6 +498,10 @@ end
 --- Close the Crush terminal window (buffer remains alive).
 function M.close()
   if crush_win and vim.api.nvim_win_is_valid(crush_win) then
+    local wins = vim.api.nvim_tabpage_list_wins(0)
+    if #wins <= 1 then
+      vim.cmd 'enew'
+    end
     vim.api.nvim_win_hide(crush_win)
     crush_win = nil
   end
