@@ -57,6 +57,25 @@ function M.check()
     })
   end
 
+  -- Check gh CLI (optional, for CVM remote releases)
+  if vim.fn.executable 'gh' == 1 then
+    vim.health.ok 'gh CLI found (CVM remote releases enabled)'
+  else
+    vim.health.warn('gh CLI not found (required for :CrushCvmReleases)', {
+      'Install from: https://cli.github.com/',
+      'Run `gh auth login` after installation',
+    })
+  end
+
+  -- Check git (optional, for CVM local repo browsing)
+  if vim.fn.executable 'git' == 1 then
+    vim.health.ok 'git found'
+  else
+    vim.health.warn('git not found (required for :CrushCvmLocal)', {
+      'Install from: https://git-scm.com/',
+    })
+  end
+
   -- Check telescope.nvim (optional but recommended)
   local has_telescope = pcall(require, 'telescope')
   if has_telescope then
@@ -65,6 +84,15 @@ function M.check()
     vim.health.warn('telescope.nvim not found (AI locations picker will use quickfix fallback)', {
       'Install telescope.nvim for enhanced AI locations picker',
       'See: https://github.com/nvim-telescope/telescope.nvim',
+    })
+  end
+
+  -- Check glow (optional, for formatted release notes in CVM picker)
+  if vim.fn.executable 'glow' == 1 then
+    vim.health.ok 'glow found (formatted release notes in CVM picker)'
+  else
+    vim.health.warn('glow not found (CVM release notes will render as plain markdown)', {
+      'Install glow for beautifully formatted release notes: https://github.com/charmbracelet/glow',
     })
   end
 

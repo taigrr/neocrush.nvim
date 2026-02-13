@@ -135,8 +135,8 @@ end
 ---Jump to selected location in appropriate window.
 ---@param entry table Telescope entry
 local function jump_to_location(entry)
-  local neocrush = require 'neocrush'
-  local target_win = neocrush._find_edit_target_window()
+  local terminal = require 'neocrush.terminal'
+  local target_win = terminal.find_edit_target_window()
 
   if target_win then
     vim.api.nvim_set_current_win(target_win)
@@ -166,8 +166,8 @@ local function send_to_quickfix(title, items)
       return
     end
 
-    local neocrush = require 'neocrush'
-    local target_win = neocrush._find_edit_target_window()
+    local terminal = require 'neocrush.terminal'
+    local target_win = terminal.find_edit_target_window()
     local filename = vim.api.nvim_buf_get_name(entry.bufnr)
 
     if target_win then
