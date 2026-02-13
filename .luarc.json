@@ -4,7 +4,8 @@
     "version": "LuaJIT"
   },
   "diagnostics": {
-    "globals": ["describe", "it", "before_each", "after_each", "assert"]
+    "globals": ["vim", "describe", "it", "before_each", "after_each", "assert"],
+    "disable": ["redundant-parameter"]
   },
   "workspace": {
     "library": [

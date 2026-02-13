@@ -5,10 +5,30 @@
 
 local M = {}
 
-local BINARIES = {
-  neocrush = 'github.com/taigrr/neocrush/cmd/neocrush',
-  crush = 'github.com/charmbracelet/crush',
-}
+local NEOCRUSH_MODULE = 'github.com/taigrr/neocrush/cmd/neocrush'
+local DEFAULT_CRUSH_MODULE = 'github.com/charmbracelet/crush'
+
+--- Resolve the Go module URL for crush using the cvm upstream config.
+---@return string url Go module URL for crush
+local function get_crush_module()
+  local ok, cvm = pcall(require, 'neocrush.cvm')
+  if ok then
+    local cfg = cvm._get_config()
+    if cfg and cfg.upstream then
+      return 'github.com/' .. cfg.upstream
+    end
+  end
+  return DEFAULT_CRUSH_MODULE
+end
+
+--- Build the binaries table with the current upstream.
+---@return table<string, string>
+local function get_binaries()
+  return {
+    neocrush = NEOCRUSH_MODULE,
+    crush = get_crush_module(),
+  }
+end
 
 --- Check if a binary is installed and executable.
 ---@param name string Binary name
@@ -60,8 +80,9 @@ function M.install_all()
     return
   end
 
+  local binaries = get_binaries()
   local to_install = {}
-  for name, _ in pairs(BINARIES) do
+  for name, _ in pairs(binaries) do
     if not M.is_installed(name) then
       table.insert(to_install, name)
     end
@@ -73,7 +94,7 @@ function M.install_all()
   end
 
   for _, name in ipairs(to_install) do
-    M._go_install(name, BINARIES[name])
+    M._go_install(name, binaries[name])
   end
 end
 
@@ -84,7 +105,8 @@ function M.update_all()
     return
   end
 
-  for name, url in pairs(BINARIES) do
+  local binaries = get_binaries()
+  for name, url in pairs(binaries) do
     M._go_install(name, url)
   end
 end

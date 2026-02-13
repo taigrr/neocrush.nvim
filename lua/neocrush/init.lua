@@ -40,7 +40,7 @@ local M = {}
 
 ---@class neocrush.LspStartOpts
 ---@field root_dir? string Override the root directory for the LSP server
----@field on_attach? fun(client: vim.lsp.Client, bufnr: integer) Additional on_attach callback
+---@field on_attach? fun(client: table, bufnr: integer) Additional on_attach callback
 
 ---@class neocrush.Keys
 ---@field toggle? string Keymap for :CrushToggle
@@ -63,7 +63,6 @@ local default_config = {
   auto_focus = true,
   terminal_width = 80,
   terminal_cmd = 'crush',
-  cvm = {},
 }
 
 ---@type neocrush.Config
@@ -101,42 +100,67 @@ end
 -- Public API: Delegated to submodules
 -------------------------------------------------------------------------------
 
--- Terminal management (delegated to neocrush.terminal)
+--- Open the Crush terminal.
 function M.open()
   require('neocrush.terminal').open()
 end
+
+--- Close the Crush terminal.
 function M.close()
   require('neocrush.terminal').close()
 end
+
+--- Toggle the Crush terminal.
 function M.toggle()
   require('neocrush.terminal').toggle()
 end
+
+--- Focus the Crush terminal.
 function M.focus()
   require('neocrush.terminal').focus()
 end
+
+--- Set the terminal width.
+---@param width integer Width in columns
 function M.set_width(width)
   require('neocrush.terminal').set_width(width)
 end
+
+--- Show Crush logs in a buffer.
 function M.logs()
   require('neocrush.terminal').logs()
 end
+
+--- Cancel current Crush operation.
 function M.cancel()
   require('neocrush.terminal').cancel()
 end
+
+--- Restart the Crush terminal.
 function M.restart()
   require('neocrush.terminal').restart()
 end
+
+--- Paste register contents into the Crush terminal.
+---@param register? string Register to paste from (default: '+')
 function M.paste(register)
   require('neocrush.terminal').paste(register)
 end
+
+--- Paste the current visual selection into the Crush terminal.
 function M.paste_selection()
   require('neocrush.terminal').paste_selection()
 end
 
--- LSP management (delegated to neocrush.lsp)
+--- Start the neocrush LSP client.
+---@param opts? neocrush.LspStartOpts
+---@return integer|nil client_id
 function M.start_lsp(opts)
   return require('neocrush.lsp').start_lsp(opts)
 end
+
+--- Get the neocrush LSP client instance.
+---@return table|nil client
 function M.get_client()
   return require('neocrush.lsp').get_client()
 end
@@ -164,15 +188,25 @@ end
 -- Test Helpers (exposed for unit testing)
 -------------------------------------------------------------------------------
 
-M._is_file_window = function(...)
-  return require('neocrush.terminal')._is_file_window(...)
+---@param win integer
+---@return boolean
+M._is_file_window = function(win)
+  return require('neocrush.terminal')._is_file_window(win)
 end
-M._find_edit_target_window = function(...)
-  return require('neocrush.terminal')._find_edit_target_window(...)
+
+---@return integer|nil
+M._find_edit_target_window = function()
+  return require('neocrush.terminal')._find_edit_target_window()
 end
-M._flash_range = function(...)
-  return require('neocrush.lsp')._flash_range(...)
+
+---@param bufnr integer
+---@param start_line integer
+---@param end_line integer
+M._flash_range = function(bufnr, start_line, end_line)
+  return require('neocrush.lsp')._flash_range(bufnr, start_line, end_line)
 end
+
+---@return boolean
 M._is_handler_installed = function()
   return require('neocrush.lsp')._is_handler_installed()
 end
