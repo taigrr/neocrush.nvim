@@ -4,7 +4,7 @@
 
 Neovim plugin (Lua) for [neocrush](https://github.com/taigrr/neocrush) LSP integration. Provides flash highlights on AI edits, auto-focus of edited files, a Crush terminal manager, cursor/selection sync, and a Telescope-based AI locations picker.
 
-**Requirements**: Neovim >= 0.10, `neocrush` binary, `crush` CLI, optional `telescope.nvim`.
+**Requirements**: Neovim >= 0.10, `neocrush` binary, `crush` CLI, `glaze.nvim` for binary management, optional `telescope.nvim`.
 
 ## Commands
 
@@ -37,9 +37,12 @@ lua/neocrush/
   lsp.lua         # LSP client, workspace/applyEdit handler, flash highlights, cursor/selection sync
   commands.lua    # User command registration and keybinding setup
   health.lua      # :checkhealth neocrush implementation
-  install.lua     # Binary installer (go install neocrush/crush)
+  install.lua     # Simple utility: is_installed() helper (binary management via glaze.nvim)
   locations.lua   # Telescope picker for AI-annotated code locations (with quickfix fallback)
-  cvm.lua         # Crush Version Manager: browse/install releases or build from local repo
+  cvm/            # Crush Version Manager directory
+    init.lua      # CVM entry point: config, setup, version detection, install functions
+    releases.lua  # Telescope picker for GitHub releases
+    local.lua     # Telescope picker for local repo commits
 plugin/
   neocrush.lua    # Plugin loader (guard, version check, binary check)
 tests/
@@ -102,12 +105,13 @@ This means function calls look like `vim.cmd 'startinsert'` not `vim.cmd('starti
 
 The plugin is split into focused submodules, all orchestrated by `init.lua`:
 
-- **`init.lua`** — Config, types, auto-focus API, `setup()`. Delegates terminal/LSP/commands to submodules. Preserves backward-compatible public API (`require('neocrush').open()`, etc.)
+- **`init.lua`** — Config, types, auto-focus API, `setup()`. Delegates terminal/LSP/commands to submodules. Preserves backward-compatible public API (`require('neocrush').open()`, etc.). Registers binaries with glaze.nvim if available.
 - **`terminal.lua`** — Owns terminal state (`crush_win`, `crush_buf`). Exposes `find_edit_target_window()` and `get_visual_selection_text()` used by other modules.
 - **`lsp.lua`** — LSP client lifecycle, `workspace/applyEdit` handler override, flash highlights, cursor/selection sync autocmds.
 - **`commands.lua`** — All `nvim_create_user_command` registrations and keybinding setup. Receives the main module table to call auto-focus API.
+- **`install.lua`** — Simple utility module with `is_installed()` helper. Binary management is handled by glaze.nvim.
 - **`locations.lua`** — Telescope picker for `crush/showLocations`. Uses `terminal.find_edit_target_window()`.
-- **`cvm.lua`** — Self-contained CVM module with its own config and setup.
+- **`cvm/`** — Crush Version Manager directory with `init.lua`, `releases.lua`, `local.lua`. Self-contained module for version-specific installs.
 
 ### LSP Integration
 
@@ -136,7 +140,7 @@ The `workspace/applyEdit` handler is globally overridden. For neocrush edits: ap
 
 ### Crush Version Manager (CVM)
 
-`lua/neocrush/cvm.lua` provides two Telescope pickers for managing crush versions:
+`lua/neocrush/cvm/` provides two Telescope pickers for managing crush versions:
 
 - **`:CrushCvmReleases`** — Fetches releases from GitHub via `gh api`, displays tag + release name with markdown release notes in the preview pane. Currently installed version is highlighted with `CrushCvmCurrent` (green). Selecting a release prompts to `go install` that tag.
 - **`:CrushCvmLocal <path>`** — Reads commits from a local git clone, displays short hash + refs with commit details + `git show --stat` in preview. HEAD is highlighted with `CrushCvmHead` (blue). Selecting a commit prompts to `git checkout` + `go install .`.

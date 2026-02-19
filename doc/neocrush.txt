@@ -8,9 +8,10 @@ CONTENTS                                                  *neocrush-contents*
     3. Installation ........................... |neocrush-installation|
     4. Configuration .......................... |neocrush-configuration|
     5. Commands ............................... |neocrush-commands|
-    6. API .................................... |neocrush-api|
-    7. Keymaps ................................ |neocrush-keymaps|
-    8. Health Check ........................... |neocrush-health|
+    6. Crush Version Manager (CVM) ............ |neocrush-cvm|
+    7. API .................................... |neocrush-api|
+    8. Keymaps ................................ |neocrush-keymaps|
+    9. Health Check ........................... |neocrush-health|
 
 ==============================================================================
 1. INTRODUCTION                                       *neocrush-introduction*
@@ -22,7 +23,8 @@ enabling features like:
 - Auto-focus of edited files in the leftmost code window
 - Crush terminal management with toggle/focus commands
 - Cursor position synchronization with the neocrush server
-- Binary installation/update via `:CrushInstallBinaries` and `:CrushUpdateBinaries`
+- AI locations picker with Telescope integration
+- Crush Version Manager (CVM) for managing crush versions
 
 ==============================================================================
 2. REQUIREMENTS                                       *neocrush-requirements*
@@ -30,7 +32,10 @@ enabling features like:
 - Neovim >= 0.10
 - neocrush binary in PATH (https://github.com/taigrr/neocrush)
 - crush CLI in PATH (https://github.com/charmbracelet/crush)
-- Optional: Go for `:CrushInstallBinaries` and `:CrushUpdateBinaries` commands
+- glaze.nvim for automatic binary management (https://github.com/taigrr/glaze.nvim)
+- Optional: telescope.nvim for AI locations picker and CVM
+- Optional: gh CLI for CVM remote releases
+- Optional: glow for formatted release notes in CVM picker
 
 ==============================================================================
 3. INSTALLATION                                       *neocrush-installation*
@@ -38,6 +43,10 @@ enabling features like:
 Using lazy.nvim: >lua
     {
       'taigrr/neocrush.nvim',
+      dependencies = {
+        'nvim-telescope/telescope.nvim',
+        'taigrr/glaze.nvim',
+      },
       event = 'VeryLazy',
       opts = {},
       keys = {
@@ -47,16 +56,11 @@ Using lazy.nvim: >lua
     }
 <
 
-Using packer.nvim: >lua
-    use {
-      'taigrr/neocrush.nvim',
-      config = function()
-        require('neocrush').setup()
-        vim.keymap.set('n', '<leader>cc', '<cmd>CrushToggle<cr>')
-        vim.keymap.set('n', '<leader>cf', '<cmd>CrushFocus<cr>')
-      end,
-    }
-<
+Binary management is handled by glaze.nvim. Use `:GlazeInstall` and
+`:GlazeUpdate` commands to install/update neocrush, crush, and glow binaries.
+
+For managing specific crush versions (e.g., testing pre-release builds),
+use the Crush Version Manager commands. See |neocrush-cvm|.
 
 ==============================================================================
 4. CONFIGURATION                                     *neocrush-configuration*
@@ -78,6 +82,12 @@ Call `setup()` with a configuration table: >lua
 
       -- Command to run in terminal
       terminal_cmd = 'crush',
+
+      -- CVM configuration (optional)
+      cvm = {
+        upstream = 'charmbracelet/crush',  -- GitHub repo for releases
+        local_repo = '~/code/crush',       -- Default path for :CrushCvmLocal
+      },
     })
 <
 
@@ -99,22 +109,100 @@ Configuration options:
 `terminal_cmd` (string, default: 'crush')
     Command to run when opening the Crush terminal.
 
+`cvm` (table, optional)
+    Crush Version Manager configuration. See |neocrush-cvm|.
+
 ==============================================================================
 5. COMMANDS                                               *neocrush-commands*
+
+Terminal commands:
 
 *:CrushToggle*          Toggle the Crush terminal window (right split)
 *:CrushOpen*            Open the Crush terminal
 *:CrushClose*           Close the Crush terminal (keeps buffer alive)
 *:CrushFocus*           Focus the Crush terminal (opens if closed)
 *:CrushWidth* {n}       Set the terminal width to {n} columns
+*:CrushLogs*            Show Crush logs in a new buffer
+*:CrushCancel*          Cancel current operation (sends <Esc><Esc>)
+*:CrushRestart*         Kill and restart the Crush terminal
+*:CrushPaste* [reg]     Paste register (default: +) or selection into terminal
+
+Auto-focus commands:
+
 *:CrushFocusToggle*     Toggle auto-focus behavior
 *:CrushFocusOn*         Enable auto-focus
 *:CrushFocusOff*        Disable auto-focus
-*:CrushInstallBinaries* Install neocrush and crush binaries via `go install`
-*:CrushUpdateBinaries* Update neocrush and crush binaries to latest version
+
+CVM commands (see |neocrush-cvm| for details):
+
+*:CrushCvmReleases*     Browse and install crush releases from GitHub
+*:CrushCvmLocal* [path] Browse and install crush from local repo commits
 
 ==============================================================================
-6. API                                                         *neocrush-api*
+6. CRUSH VERSION MANAGER (CVM)                              *neocrush-cvm*
+
+The Crush Version Manager (CVM) lets you browse and install specific crush
+versions. This is useful for:
+
+- Testing pre-release versions
+- Debugging issues with specific versions
+- Building from a local development checkout
+
+Note: For day-to-day binary management (install/update to latest), use
+glaze.nvim commands (`:GlazeInstall`, `:GlazeUpdate`) instead of CVM.
+
+CVM COMMANDS ~
+
+*:CrushCvmReleases*
+    Opens a Telescope picker showing all crush releases from GitHub.
+    The currently installed version is highlighted in green.
+
+    Requirements: `gh` CLI (authenticated), `go`, `telescope.nvim`
+
+    Keybindings:
+      <CR>    Install selected release
+      <C-c>   Cancel
+
+*:CrushCvmLocal* [path]
+    Opens a Telescope picker showing commits from a local crush repository.
+    HEAD is highlighted in blue. Selecting a commit checks it out and runs
+    `go install .` from the repo root.
+
+    If [path] is omitted, uses `cvm.local_repo` from config.
+
+    Requirements: `git`, `go`, `telescope.nvim`
+
+    Keybindings:
+      <CR>    Checkout and install selected commit
+      <C-c>   Cancel
+
+CVM CONFIGURATION ~
+
+Configure CVM in your setup call: >lua
+    require('neocrush').setup({
+      cvm = {
+        -- GitHub repo for releases (owner/repo format)
+        upstream = 'charmbracelet/crush',
+
+        -- Default path for :CrushCvmLocal when no argument given
+        local_repo = '~/code/crush',
+      },
+    })
+<
+
+`upstream` controls both the GitHub API endpoint for fetching releases and
+the Go module path used for `go install`. Set this to a fork if you want
+to install from a different repository.
+
+CVM HIGHLIGHTS ~
+
+CVM defines two highlight groups (linked by default):
+
+*CrushCvmCurrent*   Currently installed version (links to DiagnosticOk)
+*CrushCvmHead*      HEAD commit in local picker (links to DiagnosticInfo)
+
+==============================================================================
+7. API                                                         *neocrush-api*
 
 All functions are available via `require('neocrush')`.
 
@@ -137,6 +225,24 @@ TERMINAL MANAGEMENT ~
 
     Parameters: ~
         {width}  (integer) Width in columns
+
+*neocrush.logs()*
+    Show Crush logs in a new buffer.
+
+*neocrush.cancel()*
+    Cancel current Crush operation (sends <Esc><Esc>).
+
+*neocrush.restart()*
+    Kill and restart the Crush terminal.
+
+*neocrush.paste*([register])
+    Paste register contents into the Crush terminal.
+
+    Parameters: ~
+        {register}  (string, optional) Register to paste from (default: '+')
+
+*neocrush.paste_selection()*
+    Paste the current visual selection into the Crush terminal.
 
 AUTO-FOCUS CONTROL ~
 
@@ -175,7 +281,7 @@ LSP MANAGEMENT ~
         (vim.lsp.Client|nil) The client or nil if not running
 
 ==============================================================================
-7. KEYMAPS                                                 *neocrush-keymaps*
+8. KEYMAPS                                                 *neocrush-keymaps*
 
 The plugin does not set any keymaps by default.
 Add your own keymaps in your configuration: >lua
@@ -193,20 +299,43 @@ With lazy.nvim, use the `keys` option: >lua
       keys = {
         { '<leader>cc', '<cmd>CrushToggle<cr>', desc = 'Toggle Crush terminal' },
         { '<leader>cf', '<cmd>CrushFocus<cr>', desc = 'Focus Crush terminal' },
+        { '<leader>cvr', '<cmd>CrushCvmReleases<cr>', desc = 'Browse crush releases' },
+        { '<leader>cvl', '<cmd>CrushCvmLocal<cr>', desc = 'Browse local crush commits' },
       },
     }
 <
 
+You can also configure keymaps via the `keys` option in setup(): >lua
+
+    require('neocrush').setup({
+      keys = {
+        toggle = '<leader>cc',
+        focus = '<leader>cf',
+        logs = '<leader>cl',
+        cancel = '<leader>cx',
+        restart = '<leader>cr',
+        paste = '<leader>cp',
+        cvm_releases = '<leader>cvr',
+        cvm_local = '<leader>cvl',
+      },
+    })
+<
+
 ==============================================================================
-8. HEALTH CHECK                                             *neocrush-health*
+9. HEALTH CHECK                                             *neocrush-health*
 
 Run `:checkhealth neocrush` to verify your setup.
 
 The health check will verify:
 - Neovim version (>= 0.10 required)
+- glaze.nvim availability (for binary management)
 - neocrush binary availability
-- crush CLI availability (optional)
-- Go availability (for install/update commands)
+- crush CLI availability
+- Go availability (for CVM)
+- gh CLI availability (for CVM remote releases)
+- git availability (for CVM local repo)
+- telescope.nvim availability
+- glow availability (for formatted CVM release notes)
 - LSP client status
 
 ==============================================================================

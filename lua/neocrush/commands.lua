@@ -50,14 +50,6 @@ function M.create(neocrush)
     neocrush.disable_auto_focus()
   end, { desc = 'Disable Crush edit auto-focus' })
 
-  vim.api.nvim_create_user_command('CrushInstallBinaries', function()
-    require('neocrush.install').install_all()
-  end, { desc = 'Install neocrush and crush binaries' })
-
-  vim.api.nvim_create_user_command('CrushUpdateBinaries', function()
-    require('neocrush.install').update_all()
-  end, { desc = 'Update neocrush and crush binaries' })
-
   vim.api.nvim_create_user_command('CrushLogs', function()
     terminal.logs()
   end, { desc = 'Show Crush logs in a new buffer' })

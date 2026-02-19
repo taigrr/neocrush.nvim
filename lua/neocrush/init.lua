@@ -13,8 +13,6 @@
 ---   :CrushOpen, :CrushClose - Explicit open/close
 ---   :CrushWidth <n>         - Set terminal width
 ---   :CrushFocusToggle/On/Off - Control auto-focus behavior
----   :CrushInstallBinaries   - Install neocrush and crush binaries
----   :CrushUpdateBinaries    - Update neocrush and crush binaries
 ---   :CrushLogs              - Show Crush logs in a new buffer
 ---   :CrushCancel            - Cancel current operation (sends <Esc><Esc>)
 ---   :CrushRestart           - Kill and restart Crush terminal
@@ -26,13 +24,16 @@
 local M = {}
 
 -- Register binaries with glaze.nvim if available
-local _glaze_ok, _glaze = pcall(require, "glaze")
+local _glaze_ok, _glaze = pcall(require, 'glaze')
 if _glaze_ok then
-  _glaze.register("neocrush", "github.com/taigrr/neocrush/cmd/neocrush", {
-    plugin = "neocrush.nvim",
+  _glaze.register('neocrush', 'github.com/taigrr/neocrush/cmd/neocrush', {
+    plugin = 'neocrush.nvim',
   })
-  _glaze.register("crush", "github.com/charmbracelet/crush", {
-    plugin = "neocrush.nvim",
+  _glaze.register('crush', 'github.com/charmbracelet/crush', {
+    plugin = 'neocrush.nvim',
+  })
+  _glaze.register('glow', 'github.com/charmbracelet/glow', {
+    plugin = 'neocrush.nvim',
   })
 end
 

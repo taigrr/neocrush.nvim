@@ -120,7 +120,7 @@ function M.start_lsp(opts)
   if vim.fn.executable 'neocrush' ~= 1 then
     if not warned_missing_binary then
       warned_missing_binary = true
-      vim.notify('neocrush binary not found. Install with :CrushInstallBinaries (requires Go)', vim.log.levels.WARN)
+      vim.notify('neocrush binary not found. Install with :GlazeInstall neocrush', vim.log.levels.WARN)
     end
     return nil
   end

@@ -16,13 +16,13 @@ function M.check()
   end
 
   -- Check glaze.nvim (optional)
-  local has_glaze = pcall(require, "glaze")
+  local has_glaze = pcall(require, 'glaze')
   if has_glaze then
-    vim.health.ok("glaze.nvim found (binary management enabled)")
+    vim.health.ok 'glaze.nvim found (binary management enabled)'
   else
-    vim.health.warn("glaze.nvim not found", {
-      "Install glaze.nvim for automatic binary management",
-      "See: https://github.com/taigrr/glaze.nvim",
+    vim.health.warn('glaze.nvim not found', {
+      'Install glaze.nvim for automatic binary management',
+      'See: https://github.com/taigrr/glaze.nvim',
     })
   end
 
@@ -36,7 +36,7 @@ function M.check()
     end
   else
     vim.health.error('neocrush binary not found', {
-      'Install with :CrushInstallBinaries (requires Go)',
+      'Install with :GlazeInstall neocrush',
       'Or manually: go install github.com/taigrr/neocrush/cmd/neocrush@latest',
       'See: https://github.com/taigrr/neocrush',
     })
@@ -52,7 +52,7 @@ function M.check()
     end
   else
     vim.health.error('crush CLI not found', {
-      'Install with :CrushInstallBinaries (requires Go)',
+      'Install with :GlazeInstall crush',
       'Or manually: go install github.com/charmbracelet/crush@latest',
       'See: https://github.com/charmbracelet/crush',
     })
@@ -63,7 +63,7 @@ function M.check()
     local go_version = vim.fn.system('go version'):gsub('%s+$', '')
     vim.health.ok('Go found: ' .. go_version)
   else
-    vim.health.warn('Go not found (required for :CrushInstallBinaries/:CrushUpdateBinaries)', {
+    vim.health.warn('Go not found (required for :CrushCvmLocal and :CrushCvmReleases)', {
       'Install from: https://go.dev/dl/',
     })
   end
