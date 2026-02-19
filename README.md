@@ -19,9 +19,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 - [neocrush](https://github.com/taigrr/neocrush) binary in PATH
 - [crush](https://github.com/charmbracelet/crush) CLI for terminal integration
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for AI locations picker
-- Go (for `:CrushInstallBinaries`/`:CrushUpdateBinaries`)
-- (Optional) [glaze.nvim](https://github.com/taigrr/glaze.nvim) — centralized Go binary manager. If installed, neocrush.nvim auto-registers its binaries with Glaze.
-- (Optional) [glaze.nvim](https://github.com/taigrr/glaze.nvim) — centralized Go binary manager. If installed, neocrush.nvim auto-registers its binaries with Glaze.
+- [glaze.nvim](https://github.com/taigrr/glaze.nvim) — manages Go binary installation/updates automatically
 
 ## Installation
 
@@ -29,7 +27,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 -- lazy.nvim
 {
   'taigrr/neocrush.nvim',
-  dependencies = { 'nvim-telescope/telescope.nvim' },
+  dependencies = { 'nvim-telescope/telescope.nvim', 'taigrr/glaze.nvim' },
   event = 'VeryLazy',
   opts = {
     -- All options are optional with sensible defaults
