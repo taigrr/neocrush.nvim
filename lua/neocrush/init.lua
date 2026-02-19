@@ -25,6 +25,17 @@
 
 local M = {}
 
+-- Register binaries with glaze.nvim if available
+local _glaze_ok, _glaze = pcall(require, "glaze")
+if _glaze_ok then
+  _glaze.register("neocrush", "github.com/taigrr/neocrush/cmd/neocrush", {
+    plugin = "neocrush.nvim",
+  })
+  _glaze.register("crush", "github.com/charmbracelet/crush", {
+    plugin = "neocrush.nvim",
+  })
+end
+
 -------------------------------------------------------------------------------
 -- Type Definitions
 -------------------------------------------------------------------------------

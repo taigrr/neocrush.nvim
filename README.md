@@ -11,7 +11,6 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 - **AI Locations Picker**: Custom Telescope picker for AI-annotated code locations with 3-pane UI
 - **Terminal Management**: Toggle/focus/restart Crush terminal
 - **Cursor Sync**: Send cursor position to neocrush for context awareness
-- **Version Manager (CVM)**: Browse and install crush releases from GitHub or build from a local repo clone
 - **Health Check**: Verify setup with `:checkhealth neocrush`
 
 ## Requirements
@@ -19,10 +18,10 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 - Neovim >= 0.10
 - [neocrush](https://github.com/taigrr/neocrush) binary in PATH
 - [crush](https://github.com/charmbracelet/crush) CLI for terminal integration
-- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for AI locations picker and CVM
-- Go (for `:CrushInstallBinaries`/`:CrushUpdateBinaries` and CVM installs)
-- [`gh`](https://cli.github.com/) CLI (authenticated) for `:CrushCvmReleases`
-- [`glow`](https://github.com/charmbracelet/glow) (optional) for formatted release notes in CVM picker
+- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for AI locations picker
+- Go (for `:CrushInstallBinaries`/`:CrushUpdateBinaries`)
+- (Optional) [glaze.nvim](https://github.com/taigrr/glaze.nvim) — centralized Go binary manager. If installed, neocrush.nvim auto-registers its binaries with Glaze.
+- (Optional) [glaze.nvim](https://github.com/taigrr/glaze.nvim) — centralized Go binary manager. If installed, neocrush.nvim auto-registers its binaries with Glaze.
 
 ## Installation
 
@@ -40,12 +39,6 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
     terminal_width = 80,             -- Terminal width in columns
     terminal_cmd = 'crush',          -- Command to run in terminal
 
-    -- Crush Version Manager
-    cvm = {
-      upstream = 'charmbracelet/crush',  -- GitHub owner/repo (change for forks)
-      local_repo = '~/src/crush',        -- Default path for :CrushCvmLocal
-    },
-
     -- Optional keybindings (none set by default)
     keys = {
       toggle = '<leader>cc',
@@ -54,8 +47,6 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
       cancel = '<leader>cx',
       restart = '<leader>cr',
       paste = '<leader>cp',  -- Works in normal (clipboard) and visual (selection) mode
-      cvm_releases = '<leader>cv',
-      cvm_local = '<leader>cV',
     },
   },
 }
@@ -80,8 +71,6 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 | `:CrushFocusOn/Off`     | Enable/disable auto-focus                         |
 | `:CrushInstallBinaries` | Install neocrush and crush binaries (requires Go) |
 | `:CrushUpdateBinaries`  | Update binaries to latest version                 |
-| `:CrushCvmReleases`    | Browse and install crush releases from GitHub      |
-| `:CrushCvmLocal [path]` | Browse and install crush from local repo commits   |
 
 ### Pasting Registers
 
@@ -95,22 +84,6 @@ Pass a register name to paste from a specific register:
 ```
 
 In visual mode, `:CrushPaste` pastes the current selection.
-
-### Crush Version Manager (CVM)
-
-`:CrushCvmReleases` opens a Telescope picker listing all GitHub releases.
-The currently installed version is highlighted in green.
-Selecting a release installs it via `go install`.
-Release notes are shown in the preview pane (rendered with `glow` if available).
-
-`:CrushCvmLocal [path]` opens a Telescope picker listing commits from a local
-crush repo clone. HEAD is highlighted in blue. Selecting a commit checks it out
-and runs `go install .` to build.
-
-If no path is given, `cvm.local_repo` from your config is used.
-
-Set `cvm.upstream` to a fork's `owner/repo` to browse and install from a
-different source.
 
 ## API
 
@@ -131,12 +104,6 @@ crush.paste_selection()     -- Paste visual selection
 crush.toggle_auto_focus()   -- Toggle auto-focus
 crush.start_lsp()           -- Manually start LSP
 crush.get_client()          -- Get LSP client instance
-
--- Crush Version Manager
-local cvm = require('neocrush.cvm')
-cvm.pick_releases()         -- Open GitHub releases picker
-cvm.pick_local('~/src/crush') -- Open local repo commits picker
-cvm.get_current_version(function(v) print(v) end)
 ```
 
 ## How It Works
@@ -145,6 +112,30 @@ cvm.get_current_version(function(v) print(v) end)
 2. **Edit Handler**: Overrides `workspace/applyEdit` to flash highlight edits and scroll them into view
 3. **Cursor Sync**: Sends `crush/cursorMoved` notifications for context awareness
 4. **Terminal**: Manages a persistent terminal buffer for the Crush CLI
+
+## AI Locations Picker
+
+When an AI agent calls the `show_locations` MCP tool, neocrush displays a custom Telescope picker:
+
+```
+┌─────────────────────┬────────────────────────────┐
+│ file.go:42          │                            │
+│ other.go:15         │   [file preview]           │
+│ > handler.go:88  ◄──│                            │
+│ utils.go:23         │                            │
+├─────────────────────┴────────────────────────────┤
+│ This handler validates user input but doesn't    │
+│ sanitize the email field. Relevant because you   │
+│ asked about potential security issues.           │
+└──────────────────────────────────────────────────┘
+```
+
+**Keybindings:**
+- `<CR>` - Jump to selected location
+- `<C-q>` - Send all locations to quickfix list
+- `<M-q>` - Send selected location to quickfix list
+
+The bottom pane shows the AI's explanation of why each location is relevant to your query.
 
 ## Important Notes
 
