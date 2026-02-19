@@ -135,8 +135,8 @@ Auto-focus commands:
 
 CVM commands (see |neocrush-cvm| for details):
 
-*:CrushCvmReleases*     Browse and install crush releases from GitHub
-*:CrushCvmLocal* [path] Browse and install crush from local repo commits
+|:CrushCvmReleases|     Browse and install crush releases from GitHub
+|:CrushCvmLocal| [path] Browse and install crush from local repo commits
 
 ==============================================================================
 6. CRUSH VERSION MANAGER (CVM)                              *neocrush-cvm*
