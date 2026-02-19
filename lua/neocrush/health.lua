@@ -15,6 +15,17 @@ function M.check()
     vim.health.error('Neovim >= 0.10 required', { 'Upgrade Neovim to 0.10 or later' })
   end
 
+  -- Check glaze.nvim (optional)
+  local has_glaze = pcall(require, "glaze")
+  if has_glaze then
+    vim.health.ok("glaze.nvim found (binary management enabled)")
+  else
+    vim.health.warn("glaze.nvim not found", {
+      "Install glaze.nvim for automatic binary management",
+      "See: https://github.com/taigrr/glaze.nvim",
+    })
+  end
+
   -- Check neocrush binary
   if vim.fn.executable 'neocrush' == 1 then
     local version = vim.fn.system('neocrush --version 2>/dev/null'):gsub('%s+$', '')
