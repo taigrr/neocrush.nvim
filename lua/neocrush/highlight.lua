@@ -33,14 +33,19 @@ function M.flash_range(bufnr, start_line, end_line)
 
   vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
-  for line = start_line, end_line - 1 do
-    vim.api.nvim_buf_set_extmark(bufnr, ns, line, 0, {
-      end_row = line,
-      end_col = 0,
-      hl_group = config.highlight_group,
-      hl_eol = true,
-      line_hl_group = config.highlight_group,
-    })
+  local line_count = vim.api.nvim_buf_line_count(bufnr)
+  local clamped_end = math.min(end_line, line_count)
+
+  for line = start_line, clamped_end - 1 do
+    if line >= 0 and line < line_count then
+      vim.api.nvim_buf_set_extmark(bufnr, ns, line, 0, {
+        end_row = line,
+        end_col = 0,
+        hl_group = config.highlight_group,
+        hl_eol = true,
+        line_hl_group = config.highlight_group,
+      })
+    end
   end
 
   vim.defer_fn(function()
