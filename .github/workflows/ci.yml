@@ -1,44 +1,52 @@
-name: Tests
+name: CI
 
 on: [push, pull_request]
 
 jobs:
-  # unit_tests:
-  #   name: unit tests
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-22.04]
-  #       rev: [nightly, v0.10.0]
-  #
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - uses: rhysd/action-setup-vim@v1
-  #       with:
-  #         neovim: true
-  #         version: ${{ matrix.rev }}
-  #
-  #     - name: Prepare plenary.nvim
-  #       run: |
-  #         git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
-  #
-  #     - name: Run tests
-  #       run: |
-  #         nvim --version
-  #         make test
+  unit_tests:
+    name: tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        rev: [stable, nightly]
 
-  lint:
-    name: stylua
-    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install stylua
-        run: |
-          cargo install stylua
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.rev }}
 
-      - name: Check formatting
+      - name: Prepare plenary.nvim
         run: |
-          make lint
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
+
+      - name: Update minimal_init for CI
+        run: |
+          cat > scripts/minimal_init.vim <<'EOF'
+          set rtp+=.
+          set rtp+=../plenary.nvim/
+
+          runtime! plugin/plenary.vim
+          runtime! plugin/neocrush.lua
+          EOF
+
+      - name: Run tests
+        run: |
+          nvim --version
+          make test
+
+  lint:
+    name: stylua
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check lua/ tests/
