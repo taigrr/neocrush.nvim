@@ -70,4 +70,35 @@ describe('neocrush.highlight', function()
       assert.is_true(highlight.is_installed())
     end)
   end)
+
+  describe('auto_focus_check callback', function()
+    it('should accept auto_focus_check option in setup', function()
+      local focus_enabled = true
+      assert.has_no.errors(function()
+        highlight.setup({
+          highlight_group = 'IncSearch',
+          highlight_duration = 100,
+          auto_focus = true,
+          terminal_width = 80,
+          terminal_cmd = 'crush',
+        }, {
+          auto_focus_check = function()
+            return focus_enabled
+          end,
+        })
+      end)
+    end)
+
+    it('should work without auto_focus_check option', function()
+      assert.has_no.errors(function()
+        highlight.setup {
+          highlight_group = 'IncSearch',
+          highlight_duration = 100,
+          auto_focus = true,
+          terminal_width = 80,
+          terminal_cmd = 'crush',
+        }
+      end)
+    end)
+  end)
 end)

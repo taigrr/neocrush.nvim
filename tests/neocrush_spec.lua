@@ -58,5 +58,16 @@ describe('neocrush', function()
       neocrush.disable_auto_focus()
       assert.is_false(neocrush.is_auto_focus_enabled())
     end)
+
+    it('should propagate auto_focus state to highlight module', function()
+      -- The highlight module should see toggled state via callback
+      neocrush.setup { auto_focus = true }
+      assert.is_true(neocrush.is_auto_focus_enabled())
+      neocrush.toggle_auto_focus()
+      assert.is_false(neocrush.is_auto_focus_enabled())
+      -- Toggle back
+      neocrush.toggle_auto_focus()
+      assert.is_true(neocrush.is_auto_focus_enabled())
+    end)
   end)
 end)
