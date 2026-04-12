@@ -14,6 +14,9 @@ local terminal = require 'neocrush.terminal'
 ---@type neocrush.Config|nil
 local config
 
+---@type fun(): boolean|nil Callback to check auto_focus state from init module
+local auto_focus_check = nil
+
 local ns = vim.api.nvim_create_namespace 'neocrush-highlight'
 local original_handler = nil
 local handler_installed = false
@@ -55,7 +58,18 @@ function M.flash_range(bufnr, start_line, end_line)
   end, config.highlight_duration)
 end
 
+--- Check if auto-focus is currently enabled.
+--- Uses the callback from init module to get live state, falling back to config.
+---@return boolean
+local function is_auto_focus_enabled()
+  if auto_focus_check then
+    return auto_focus_check()
+  end
+  return config and config.auto_focus or true
+end
+
 --- Ensure a buffer is visible in some window (for highlighting).
+--- When auto_focus is disabled, only returns a window if the buffer is already visible.
 ---@param bufnr integer Buffer handle
 ---@return integer|nil win Window handle where buffer is displayed, or nil
 local function ensure_buffer_visible(bufnr)
@@ -69,6 +83,11 @@ local function ensure_buffer_visible(bufnr)
   local wins = vim.fn.win_findbuf(bufnr)
   if #wins > 0 then
     return wins[1]
+  end
+
+  -- When auto-focus is off, don't open new windows for edited files
+  if not is_auto_focus_enabled() then
+    return nil
   end
 
   local target_win = terminal.find_edit_target_window()
@@ -147,7 +166,7 @@ function M.apply_edit_handler(err, result, ctx, conf)
         local new_lines = vim.split(edit.newText or '', '\n', { plain = true })
         local actual_end = start_line + #new_lines
 
-        if win and vim.api.nvim_win_is_valid(win) then
+        if win and vim.api.nvim_win_is_valid(win) and is_auto_focus_enabled() then
           vim.api.nvim_win_set_cursor(win, { start_line + 1, 0 })
           vim.api.nvim_win_call(win, function()
             vim.cmd 'normal! zz'
@@ -196,8 +215,12 @@ end
 -------------------------------------------------------------------------------
 
 ---@param cfg neocrush.Config
-function M.setup(cfg)
+---@param opts? { auto_focus_check?: fun(): boolean }
+function M.setup(cfg, opts)
   config = cfg
+  if opts and opts.auto_focus_check then
+    auto_focus_check = opts.auto_focus_check
+  end
   M.install()
 end
 

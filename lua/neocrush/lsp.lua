@@ -162,8 +162,9 @@ end
 
 --- Install handler and set up autocmds.
 ---@param cfg neocrush.Config
-function M.setup(cfg)
-  highlight.setup(cfg)
+---@param opts? { auto_focus_check?: fun(): boolean }
+function M.setup(cfg, opts)
+  highlight.setup(cfg, opts)
 
   vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('NeocrushLspAttach', { clear = true }),

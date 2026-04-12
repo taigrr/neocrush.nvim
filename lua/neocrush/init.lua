@@ -187,7 +187,11 @@ function M.setup(opts)
   config = vim.tbl_deep_extend('force', default_config, opts or {})
 
   require('neocrush.terminal').setup(config)
-  require('neocrush.lsp').setup(config)
+  require('neocrush.lsp').setup(config, {
+    auto_focus_check = function()
+      return config.auto_focus
+    end,
+  })
   require('neocrush.commands').create(M)
   require('neocrush.cvm').setup(config.cvm)
 
