@@ -31,10 +31,10 @@ function M.create(neocrush)
 
   vim.api.nvim_create_user_command('CrushWidth', function(opts)
     local width = tonumber(opts.args)
-    if width then
+    if width and width >= 1 then
       terminal.set_width(width)
     else
-      vim.notify('Usage: CrushWidth <number>', vim.log.levels.ERROR)
+      vim.notify('Usage: CrushWidth <number >= 1>', vim.log.levels.ERROR)
     end
   end, { nargs = 1, desc = 'Set Crush terminal width' })
 

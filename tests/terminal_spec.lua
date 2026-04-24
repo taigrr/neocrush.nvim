@@ -56,6 +56,28 @@ describe('neocrush.terminal', function()
     end)
   end)
 
+  describe('set_width', function()
+    it('should reject widths smaller than 1', function()
+      local original_notify = vim.notify
+      local messages = {}
+
+      vim.notify = function(msg)
+        table.insert(messages, msg)
+      end
+
+      local ok = terminal.set_width(0)
+
+      assert.is_false(ok)
+      assert.truthy(messages[1]:find 'at least 1 column')
+
+      vim.notify = original_notify
+    end)
+
+    it('should accept positive widths', function()
+      assert.is_true(terminal.set_width(42))
+    end)
+  end)
+
   describe('close', function()
     it('should not error when no terminal is open', function()
       assert.has_no.errors(function()

@@ -161,11 +161,19 @@ end
 
 --- Set the terminal width.
 ---@param width integer Width in columns
+---@return boolean updated True when the width was accepted
 function M.set_width(width)
+  if width < 1 then
+    vim.notify('Crush width must be at least 1 column', vim.log.levels.ERROR)
+    return false
+  end
+
   config.terminal_width = width
   if crush_win and vim.api.nvim_win_is_valid(crush_win) then
     vim.api.nvim_win_set_width(crush_win, config.terminal_width)
   end
+
+  return true
 end
 
 --- Run `crush logs` and load the output into a new buffer.
