@@ -315,10 +315,16 @@ function M.setup(cfg)
 end
 
 -------------------------------------------------------------------------------
--- Test Helpers
+-- Test Helpers / Internal API
 -------------------------------------------------------------------------------
 
 M._is_file_window = is_file_window
 M._find_edit_target_window = M.find_edit_target_window
+
+--- Get the terminal buffer handle (for internal use by prompts module).
+---@return integer|nil
+function M._get_buf()
+  return crush_buf
+end
 
 return M

@@ -6,6 +6,7 @@
 ---   - Auto-focus edited files in leftmost code window
 ---   - Crush terminal management (:CrushToggle, :CrushFocus)
 ---   - Cursor position sync with neocrush server
+---   - Custom prompt templates (:Crush<Name> commands)
 ---
 --- Commands:
 ---   :CrushToggle            - Toggle Crush terminal (right split)
@@ -19,6 +20,21 @@
 ---   :CrushPaste [reg]       - Paste register or selection into terminal
 ---   :CrushCvmReleases       - Browse and install crush releases from GitHub
 ---   :CrushCvmLocal <path>   - Browse and install crush from local repo commits
+---   :Crush<Name> [args]     - Custom prompts (configured via `prompts` option)
+---
+--- Custom Prompts:
+---   Configure in setup() to create :Crush<Name> commands that send
+---   pre-defined prompt templates to the Crush terminal:
+---
+---   require('neocrush').setup({
+---     prompts = {
+---       Lint = 'fix all lint and typecheck errors',
+---       PR = { template = 'review PR #%s using gh', desc = 'Review a PR' },
+---       Rebase = 'help me rebase on master and resolve conflicts',
+---     }
+---   })
+---
+---   This creates :CrushLint, :CrushPR <number>, :CrushRebase commands.
 ---@brief ]]
 
 local M = {}
@@ -49,6 +65,7 @@ end
 ---@field terminal_cmd string Command to run in terminal (default: 'crush')
 ---@field keys? neocrush.Keys Optional keybindings to set up
 ---@field cvm? neocrush.CvmConfig Crush Version Manager configuration
+---@field prompts? table<string, neocrush.Prompt|string> Custom prompt templates
 
 ---@class neocrush.LspStartOpts
 ---@field root_dir? string Override the root directory for the LSP server
@@ -177,6 +194,20 @@ function M.get_client()
   return require('neocrush.lsp').get_client()
 end
 
+--- Execute a custom prompt by name.
+---@param name string The prompt name (creates :Crush<name> command)
+---@param args? string Optional arguments to substitute into the template
+function M.prompt(name, args)
+  require('neocrush.prompts').execute(name, args)
+end
+
+--- Send arbitrary text to the Crush terminal.
+---@param text string The text to send
+---@param focus? boolean Whether to focus the terminal after sending (default: true)
+function M.send(text, focus)
+  require('neocrush.prompts').send(text, focus)
+end
+
 -------------------------------------------------------------------------------
 -- Setup
 -------------------------------------------------------------------------------
@@ -194,6 +225,10 @@ function M.setup(opts)
   })
   require('neocrush.commands').create(M)
   require('neocrush.cvm').setup(config.cvm)
+
+  if opts and opts.prompts then
+    require('neocrush.prompts').setup { prompts = opts.prompts }
+  end
 
   if opts and opts.keys then
     require('neocrush.commands').setup_keybindings(opts.keys)

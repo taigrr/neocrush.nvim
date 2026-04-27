@@ -70,4 +70,25 @@ describe('neocrush', function()
       assert.is_true(neocrush.is_auto_focus_enabled())
     end)
   end)
+
+  describe('prompts', function()
+    it('should accept prompts in setup', function()
+      assert.has_no.errors(function()
+        neocrush.setup {
+          prompts = {
+            Test = 'run tests',
+            Lint = { template = 'fix lint', desc = 'Fix lint errors' },
+          },
+        }
+      end)
+    end)
+
+    it('should expose prompt function', function()
+      assert.is_function(neocrush.prompt)
+    end)
+
+    it('should expose send function', function()
+      assert.is_function(neocrush.send)
+    end)
+  end)
 end)
