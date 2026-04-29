@@ -15,6 +15,9 @@ local highlight = require 'neocrush.highlight'
 ---@type boolean
 local warned_missing_binary = false
 
+---@type boolean
+local warned_duplicate_instance = false
+
 -------------------------------------------------------------------------------
 -- Cursor/Selection Sync
 -------------------------------------------------------------------------------
@@ -144,6 +147,19 @@ function M.start_lsp(opts)
       setup_selection_sync(client, bufnr)
       if opts.on_attach then
         opts.on_attach(client, bufnr)
+      end
+    end,
+    on_exit = function(code, signal, client_id)
+      -- Exit code 1 with no signal typically means port/socket already in use
+      if code == 1 and signal == 0 and not warned_duplicate_instance then
+        warned_duplicate_instance = true
+        vim.schedule(function()
+          vim.notify(
+            'neocrush: Another Neovim instance is already connected to this directory.\n'
+              .. 'Crush features (show_locations, highlights) will not work in this window.',
+            vim.log.levels.WARN
+          )
+        end)
       end
     end,
   }
