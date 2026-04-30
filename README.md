@@ -30,6 +30,12 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
   'taigrr/neocrush.nvim',
   dependencies = { 'nvim-telescope/telescope.nvim', 'taigrr/glaze.nvim' },
   event = 'VeryLazy',
+  init = function()
+    -- Register binaries with glaze for auto-install/update
+    local glaze = require 'glaze'
+    glaze.register('crush', 'github.com/charmbracelet/crush', { plugin = 'neocrush.nvim' })
+    glaze.register('neocrush', 'github.com/taigrr/neocrush', { plugin = 'neocrush.nvim' })
+  end,
   opts = {
     -- All options are optional with sensible defaults
     highlight_group = 'IncSearch',  -- Flash highlight group
