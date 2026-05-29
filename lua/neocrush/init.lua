@@ -39,12 +39,11 @@
 
 local M = {}
 
--- Register binaries with glaze.nvim if available
+-- Register binaries with glaze.nvim if available. Note: v2 of
+-- neocrush.nvim no longer ships a separate `neocrush` daemon binary;
+-- the only Go program you need is `crush` itself.
 local _glaze_ok, _glaze = pcall(require, 'glaze')
 if _glaze_ok then
-  _glaze.register('neocrush', 'github.com/taigrr/neocrush/cmd/neocrush', {
-    plugin = 'neocrush.nvim',
-  })
   _glaze.register('crush', 'github.com/charmbracelet/crush', {
     plugin = 'neocrush.nvim',
   })
