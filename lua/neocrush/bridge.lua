@@ -12,6 +12,7 @@
 ---   show_locations(t, items)  -> opens the Telescope picker (or quickfix).
 ---   flash_edit(p, s, e)       -> highlights a freshly-edited region.
 ---   file_changed(p)           -> reloads a buffer Crush wrote on disk; kills the W11 prompt.
+---   set_cwd(p)                -> changes the editor's working dir (worktree switch).
 ---@brief ]]
 
 local M = {}
@@ -196,6 +197,34 @@ function M.file_changed(path)
     vim.api.nvim_buf_call(bufnr, function()
       pcall(vim.cmd, 'silent! checktime')
     end)
+  end)
+end
+
+---------------------------------------------------------------------------
+-- API: set_cwd(path)
+---------------------------------------------------------------------------
+
+---Change Neovim's working directory to path, e.g. when Crush switches
+---the active worktree so the editor follows the agent into the new
+---tree. Uses tab-local :tcd so a switch only affects the current tab
+---(leaving other tabs' cwd intact), falling back to global :cd if tcd
+---is unavailable. Best-effort: never raises, and silently ignores a
+---missing/empty path or a directory that no longer exists.
+---@param path string absolute directory path
+function M.set_cwd(path)
+  if path == nil or path == '' then
+    return
+  end
+  vim.schedule(function()
+    local dir = vim.fn.fnamemodify(path, ':p')
+    if vim.fn.isdirectory(dir) == 0 then
+      return
+    end
+    -- Quote against spaces/specials in the path.
+    local quoted = vim.fn.fnameescape(dir)
+    if not pcall(vim.cmd, 'tcd ' .. quoted) then
+      pcall(vim.cmd, 'cd ' .. quoted)
+    end
   end)
 end
 
