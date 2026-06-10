@@ -149,9 +149,11 @@ end
 ---------------------------------------------------------------------------
 
 ---Briefly highlight the region [start_line, end_line) in the buffer for
----path. Does nothing if the file isn't open in this Neovim. Best-effort:
----never raises so a transient API change can't cascade into a Crush tool
----failure.
+---path. If the file isn't open in this Neovim, load it and (when
+---auto_focus is on) surface it in a window first so the change is
+---visible — same behavior the LSP-based v1 had via workspace/applyEdit.
+---Best-effort: never raises so a transient API change can't cascade
+---into a Crush tool failure.
 ---@param path string absolute file path
 ---@param start_line integer 0-indexed
 ---@param end_line integer 0-indexed exclusive
@@ -160,8 +162,20 @@ function M.flash_edit(path, start_line, end_line)
     local highlight = require 'neocrush.highlight'
     local bufnr = find_buffer(path)
     if bufnr == 0 then
-      return
+      -- Buffer not loaded. If the path exists on disk, create a buffer
+      -- for it so the rest of the flow (visibility + flash) can run.
+      if path == nil or path == '' or vim.fn.filereadable(path) ~= 1 then
+        return
+      end
+      bufnr = vim.fn.bufadd(path)
+      if bufnr == 0 then
+        return
+      end
+      pcall(vim.fn.bufload, bufnr)
     end
+    -- Surface the buffer in a window when auto_focus is on; this is what
+    -- makes a Crush edit appear in the editor like the old LSP path did.
+    pcall(highlight.ensure_buffer_visible, bufnr)
     -- Keep buffer in sync with disk before we paint extmarks; otherwise
     -- the line range may already be stale.
     vim.api.nvim_buf_call(bufnr, function()

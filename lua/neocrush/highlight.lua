@@ -72,7 +72,7 @@ end
 --- When auto_focus is disabled, only returns a window if the buffer is already visible.
 ---@param bufnr integer Buffer handle
 ---@return integer|nil win Window handle where buffer is displayed, or nil
-local function ensure_buffer_visible(bufnr)
+function M.ensure_buffer_visible(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return nil
   end
@@ -158,7 +158,7 @@ function M.apply_edit_handler(err, result, ctx, conf)
         pcall(vim.fn.bufload, bufnr)
       end
 
-      local win = ensure_buffer_visible(bufnr)
+      local win = M.ensure_buffer_visible(bufnr)
 
       for _, edit in ipairs(edits) do
         local start_line = edit.range.start.line
