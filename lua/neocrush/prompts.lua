@@ -83,7 +83,9 @@ function M.execute(name, args)
   if args and args ~= '' then
     -- Substitute %s with arguments, or append if no %s
     if template:find '%%s' then
-      text = template:gsub('%%s', args)
+      text = template:gsub('%%s', function()
+        return args
+      end)
     else
       text = template .. ' ' .. args
     end
