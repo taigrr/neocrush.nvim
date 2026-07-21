@@ -102,7 +102,7 @@ end
 -- Public API
 -------------------------------------------------------------------------------
 
---- Open the Crush terminal in a right split.
+--- Open the Crush terminal in a side split (right by default, left if configured).
 --- If already open, focuses the existing terminal.
 function M.open()
   if crush_win and vim.api.nvim_win_is_valid(crush_win) then
@@ -111,7 +111,7 @@ function M.open()
     return
   end
 
-  vim.cmd 'botright vsplit'
+  vim.cmd(config.terminal_side == 'left' and 'topleft vsplit' or 'botright vsplit')
   crush_win = vim.api.nvim_get_current_win()
   vim.w[crush_win].is_crush_terminal = true
   vim.api.nvim_win_set_width(crush_win, config.terminal_width)
