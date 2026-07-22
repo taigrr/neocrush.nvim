@@ -61,6 +61,7 @@ end
 ---@field highlight_duration integer Flash duration in milliseconds
 ---@field auto_focus boolean Auto-focus edited files in leftmost window
 ---@field terminal_width integer Terminal width in columns
+---@field terminal_side 'right'|'left' Side to open the terminal on (default: 'right')
 ---@field terminal_cmd string Command to run in terminal (default: 'crush')
 ---@field keys? neocrush.Keys Optional keybindings to set up
 ---@field cvm? neocrush.CvmConfig Crush Version Manager configuration
@@ -90,6 +91,7 @@ local default_config = {
   highlight_duration = 900,
   auto_focus = true,
   terminal_width = 80,
+  terminal_side = 'right',
   terminal_cmd = 'crush',
 }
 
