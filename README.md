@@ -1,6 +1,6 @@
 # neocrush.nvim
 
-Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
+Neovim plugin for [crush](https://github.com/taigrr/crush) integration.
 
 ![Demo](assets/demo.gif)
 
@@ -17,7 +17,6 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 ## Requirements
 
 - Neovim >= 0.10
-- [neocrush](https://github.com/taigrr/neocrush) binary in PATH
 - [crush](https://github.com/charmbracelet/crush) CLI for terminal integration
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for AI locations picker and CVM
 - [glaze.nvim](https://github.com/taigrr/glaze.nvim) — manages Go binary installation/updates automatically
@@ -28,6 +27,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
 -- lazy.nvim
 {
   'taigrr/neocrush.nvim',
+  branch = 'v2-bridge'
   dependencies = { 'nvim-telescope/telescope.nvim', 'taigrr/glaze.nvim' },
   event = 'VeryLazy',
   init = function()
@@ -47,7 +47,7 @@ Neovim plugin for [neocrush](https://github.com/taigrr/neocrush) integration.
     -- CVM configuration (optional)
     cvm = {
       upstream = 'taigrr/crush',         -- GitHub repo for releases
-      local_repo = '~/code/crush',       -- Default path for :CrushCvmLocal
+      -- local_repo = '~/code/crush',       -- Default path for :CrushCvmLocal
     },
 
     -- Optional keybindings (none set by default)
@@ -136,7 +136,7 @@ If `[path]` is omitted, uses `cvm.local_repo` from config.
 ```lua
 cvm = {
   -- GitHub repo for releases (controls API endpoint and go install path)
-  upstream = 'charmbracelet/crush',
+  upstream = 'taigrr/crush',
 
   -- Default path for :CrushCvmLocal when no argument given
   local_repo = '~/code/crush',
@@ -200,9 +200,8 @@ The bottom pane shows the AI's explanation of why each location is relevant to y
 
 ## Important Notes
 
-**Do NOT add neocrush to Mason/lspconfig.**
-This plugin manages the LSP client directly.
-If you have neocrush in your LSP config, remove it.
+You can remove `neocrush` from your system as it's deprecated and no longer
+required, if you use the `taigrr` fork of `crush`.
 
 ## Known Limitations
 
