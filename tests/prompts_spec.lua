@@ -106,8 +106,53 @@ describe('neocrush.prompts', function()
   end)
 
   describe('execute', function()
-    -- Note: execute() calls terminal functions which we can't easily test
-    -- without mocking. Test the error case for unknown prompts.
+    it('should substitute prompt arguments', function()
+      prompts.register {
+        Review = 'review PR #%s',
+      }
+      local sent
+      local original_send = prompts.send
+      prompts.send = function(text)
+        sent = text
+      end
+
+      prompts.execute('Review', '12')
+
+      prompts.send = original_send
+      eq('review PR #12', sent)
+    end)
+
+    it('should substitute prompt arguments containing percent signs', function()
+      prompts.register {
+        Note = 'summarize %s',
+      }
+      local sent
+      local original_send = prompts.send
+      prompts.send = function(text)
+        sent = text
+      end
+
+      prompts.execute('Note', '50% done')
+
+      prompts.send = original_send
+      eq('summarize 50% done', sent)
+    end)
+
+    it('should append arguments when template has no placeholder', function()
+      prompts.register {
+        Simple = 'explain',
+      }
+      local sent
+      local original_send = prompts.send
+      prompts.send = function(text)
+        sent = text
+      end
+
+      prompts.execute('Simple', 'this code')
+
+      prompts.send = original_send
+      eq('explain this code', sent)
+    end)
 
     it('should error for unknown prompt', function()
       local notified = false
