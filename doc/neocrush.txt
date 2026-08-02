@@ -16,13 +16,13 @@ CONTENTS                                                  *neocrush-contents*
 ==============================================================================
 1. INTRODUCTION                                       *neocrush-introduction*
 
-neocrush.nvim provides Neovim integration for the neocrush LSP server,
-enabling features like:
+neocrush.nvim provides Neovim integration for the Crush CLI, enabling
+features like:
 
 - Flash highlights on AI-generated edits (similar to yank highlight)
 - Auto-focus of edited files in the leftmost code window
 - Crush terminal management with toggle/focus commands
-- Cursor position synchronization with the neocrush server
+- Cursor position synchronization through the Crush bridge
 - AI locations picker with Telescope integration
 - Crush Version Manager (CVM) for managing crush versions
 
@@ -30,7 +30,6 @@ enabling features like:
 2. REQUIREMENTS                                       *neocrush-requirements*
 
 - Neovim >= 0.10
-- neocrush binary in PATH (https://github.com/taigrr/neocrush)
 - crush CLI in PATH (https://github.com/charmbracelet/crush)
 - glaze.nvim for automatic binary management (https://github.com/taigrr/glaze.nvim)
 - Optional: telescope.nvim for AI locations picker and CVM
@@ -57,7 +56,7 @@ Using lazy.nvim: >lua
 <
 
 Binary management is handled by glaze.nvim. Use `:GlazeInstall` and
-`:GlazeUpdate` commands to install/update neocrush, crush, and glow binaries.
+`:GlazeUpdate` commands to install/update crush and glow binaries.
 
 For managing specific crush versions (e.g., testing pre-release builds),
 use the Crush Version Manager commands. See |neocrush-cvm|.
@@ -329,14 +328,13 @@ Run `:checkhealth neocrush` to verify your setup.
 The health check will verify:
 - Neovim version (>= 0.10 required)
 - glaze.nvim availability (for binary management)
-- neocrush binary availability
 - crush CLI availability
 - Go availability (for CVM)
 - gh CLI availability (for CVM remote releases)
 - git availability (for CVM local repo)
 - telescope.nvim availability
 - glow availability (for formatted CVM release notes)
-- LSP client status
+- Neovim RPC socket availability for the Crush bridge
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:
