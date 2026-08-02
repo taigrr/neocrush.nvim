@@ -26,21 +26,7 @@ function M.check()
     })
   end
 
-  -- Check neocrush binary
-  if vim.fn.executable 'neocrush' == 1 then
-    local version = vim.fn.system('neocrush --version 2>/dev/null'):gsub('%s+$', '')
-    if version ~= '' then
-      vim.health.ok('neocrush binary found: ' .. version)
-    else
-      vim.health.ok 'neocrush binary found'
-    end
-  else
-    vim.health.error('neocrush binary not found', {
-      'Install with :GlazeInstall neocrush',
-      'Or manually: go install github.com/taigrr/neocrush/cmd/neocrush@latest',
-      'See: https://github.com/taigrr/neocrush',
-    })
-  end
+  vim.health.info 'No neocrush daemon required in v2; Crush connects directly to this Neovim instance'
 
   -- Check crush CLI
   if vim.fn.executable 'crush' == 1 then
@@ -107,16 +93,13 @@ function M.check()
     })
   end
 
-  -- Check LSP client status
-  local clients = vim.lsp.get_clients { name = 'neocrush' }
-  if #clients > 0 then
-    vim.health.ok 'neocrush LSP client running'
+  -- Check RPC socket status
+  if vim.v.servername ~= nil and vim.v.servername ~= '' then
+    vim.health.ok 'Neovim RPC socket available for Crush bridge'
   else
-    if vim.fn.executable 'neocrush' == 1 then
-      vim.health.info 'neocrush LSP client not running (starts on VimEnter or BufEnter)'
-    else
-      vim.health.info 'neocrush LSP client not running (binary not installed)'
-    end
+    vim.health.warn('Neovim RPC socket not available', {
+      'Start Neovim normally so terminal jobs receive the $NVIM socket path',
+    })
   end
 end
 
