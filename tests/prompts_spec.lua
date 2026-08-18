@@ -76,6 +76,22 @@ describe('neocrush.prompts', function()
       local commands = vim.api.nvim_get_commands {}
       eq('*', commands.CrushMulti.nargs)
     end)
+
+    it('should replace existing prompt commands when re-registered', function()
+      prompts.register {
+        Repeat = 'old prompt',
+      }
+
+      assert.has_no.errors(function()
+        prompts.register {
+          Repeat = 'new prompt %s',
+        }
+      end)
+
+      local commands = vim.api.nvim_get_commands {}
+      eq('?', commands.CrushRepeat.nargs)
+      eq('new prompt %s', prompts.list().Repeat)
+    end)
   end)
 
   describe('list', function()

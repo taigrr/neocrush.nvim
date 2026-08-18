@@ -118,6 +118,7 @@ function M.register(prompt_config)
     end, {
       nargs = nargs,
       desc = prompt_def.desc or ('Crush prompt: ' .. name),
+      force = true,
     })
   end
 end
