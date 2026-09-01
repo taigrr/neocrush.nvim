@@ -21,6 +21,17 @@ local cvm_config = vim.deepcopy(default_cvm_config)
 local GO_MODULE = 'github.com/charmbracelet/crush'
 
 -------------------------------------------------------------------------------
+-- Paths
+-------------------------------------------------------------------------------
+
+---Expand user and environment variable references in configured paths.
+---@param path string
+---@return string
+local function expand_path(path)
+  return vim.fn.expand(vim.fn.expandcmd(path))
+end
+
+-------------------------------------------------------------------------------
 -- Highlight Groups
 -------------------------------------------------------------------------------
 
@@ -337,7 +348,7 @@ function M.pick_local(repo_path)
     return
   end
 
-  repo_path = vim.fn.expand(repo_path)
+  repo_path = expand_path(repo_path)
   if vim.fn.isdirectory(repo_path) ~= 1 then
     vim.notify('Not a directory: ' .. repo_path, vim.log.levels.ERROR)
     return
@@ -412,5 +423,7 @@ end
 M._get_config = function()
   return cvm_config
 end
+
+M._expand_path = expand_path
 
 return M
