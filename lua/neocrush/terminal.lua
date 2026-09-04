@@ -257,18 +257,38 @@ function M.restart()
   M.open()
 end
 
---- Paste text into the Crush terminal.
---- Can paste from a register or the current visual selection.
----@param register? string Register to paste from (default: '+' for system clipboard)
-function M.paste(register)
+--- Return the channel of the running Crush terminal, or nil after warning.
+---@return integer?
+local function get_term_chan()
   if not crush_buf or not vim.api.nvim_buf_is_valid(crush_buf) then
     vim.notify('Crush terminal not running', vim.log.levels.WARN)
-    return
+    return nil
   end
 
   local term_chan = vim.bo[crush_buf].channel
   if term_chan == 0 then
     vim.notify('Crush terminal channel not found', vim.log.levels.WARN)
+    return nil
+  end
+
+  return term_chan
+end
+
+--- Wrap text in bracketed paste markers (ESC[200~ ... ESC[201~).
+--- Lets the terminal application receive the text as one paste event instead
+--- of interpreting it as individual keystrokes.
+---@param text string
+---@return string
+function M.bracketed(text)
+  return '\27[200~' .. text .. '\27[201~'
+end
+
+--- Paste text into the Crush terminal.
+--- Can paste from a register or the current visual selection.
+---@param register? string Register to paste from (default: '+' for system clipboard)
+function M.paste(register)
+  local term_chan = get_term_chan()
+  if not term_chan then
     return
   end
 
@@ -280,19 +300,13 @@ function M.paste(register)
     return
   end
 
-  vim.api.nvim_chan_send(term_chan, content)
+  vim.api.nvim_chan_send(term_chan, M.bracketed(content))
 end
 
 --- Paste the current visual selection into the Crush terminal.
 function M.paste_selection()
-  if not crush_buf or not vim.api.nvim_buf_is_valid(crush_buf) then
-    vim.notify('Crush terminal not running', vim.log.levels.WARN)
-    return
-  end
-
-  local term_chan = vim.bo[crush_buf].channel
-  if term_chan == 0 then
-    vim.notify('Crush terminal channel not found', vim.log.levels.WARN)
+  local term_chan = get_term_chan()
+  if not term_chan then
     return
   end
 
@@ -302,7 +316,7 @@ function M.paste_selection()
     return
   end
 
-  vim.api.nvim_chan_send(term_chan, text)
+  vim.api.nvim_chan_send(term_chan, M.bracketed(text))
 end
 
 -------------------------------------------------------------------------------
