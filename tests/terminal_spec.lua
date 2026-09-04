@@ -94,6 +94,16 @@ describe('neocrush.terminal', function()
     end)
   end)
 
+  describe('bracketed', function()
+    it('should wrap text in bracketed paste markers', function()
+      assert.equals('\27[200~hello\nworld\27[201~', terminal.bracketed 'hello\nworld')
+    end)
+
+    it('should wrap empty text', function()
+      assert.equals('\27[200~\27[201~', terminal.bracketed '')
+    end)
+  end)
+
   describe('paste', function()
     it('should warn when no terminal is running', function()
       assert.has_no.errors(function()
