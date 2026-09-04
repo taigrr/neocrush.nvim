@@ -31,6 +31,16 @@ describe('neocrush.cvm', function()
     end)
   end)
 
+  describe('path expansion', function()
+    it('should expand environment variables and home directory', function()
+      vim.env.NEOCRUSH_CVM_TEST_DIR = 'neocrush-test'
+
+      local expanded = cvm._expand_path '~/$NEOCRUSH_CVM_TEST_DIR'
+
+      assert.are.same(vim.fn.expand '~/neocrush-test', expanded)
+    end)
+  end)
+
   describe('get_current_version', function()
     it('should call callback with nil when crush is not installed', function()
       local original = vim.fn.executable
