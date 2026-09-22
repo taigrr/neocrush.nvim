@@ -5,7 +5,7 @@ test:
 		-c "PlenaryBustedDirectory tests/ { minimal_init = './scripts/minimal_init.vim' }"
 
 lint:
-	stylua --check lua/
+	stylua --check lua/ tests/
 
 format:
 	stylua lua/ tests/
