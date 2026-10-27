@@ -33,6 +33,7 @@ local function to_qf_item(item)
     filename = item.filename,
     lnum = item.lnum,
     col = item.col or 1,
+    type = item.type,
     text = text,
   }
 end
