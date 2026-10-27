@@ -19,6 +19,21 @@ describe('neocrush.locations', function()
       vim.cmd 'cclose'
     end)
 
+    it('should preserve quickfix types and allow untyped locations', function()
+      local items = {}
+      for index, kind in ipairs { 'N', 'I', 'W', 'E', '' } do
+        items[index] = { filename = 'test.lua', lnum = index, type = kind ~= '' and kind or nil }
+      end
+
+      locations.show_quickfix('Typed Locations', items)
+      local qf = vim.fn.getqflist()
+      vim.cmd 'cclose'
+
+      for index, kind in ipairs { 'N', 'I', 'W', 'E', '' } do
+        assert.are.same(kind, qf[index].type)
+      end
+    end)
+
     it('should use default title when nil', function()
       locations.show_quickfix(nil, {
         { filename = 'a.lua', lnum = 1 },
