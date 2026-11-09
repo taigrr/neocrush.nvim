@@ -26,7 +26,7 @@ nvim --headless --noplugin -u scripts/minimal_init.vim \
 
 The minimal init at `scripts/minimal_init.vim` adds plenary.nvim from `~/.local/share/nvim/lazy/plenary.nvim/` to runtimepath. Tests use `describe`, `it`, `before_each`, `after_each`, `assert` globals (declared in `.luarc.json`).
 
-**CI**: Only the `lint` job runs in GitHub Actions (`.github/workflows/ci.yml`). The unit test job is commented out. The VHS demo workflow is manual dispatch only.
+**CI**: GitHub Actions (`.github/workflows/ci.yml`) runs unit tests on Neovim v0.10.4 (the minimum supported release series), stable, and nightly, plus StyLua formatting checks. The VHS demo workflow is manual dispatch only.
 
 ## Project Structure
 
