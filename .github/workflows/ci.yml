@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        rev: [stable, nightly]
+        rev: ['v0.10.4', stable, nightly]
 
     steps:
       - uses: actions/checkout@v4
