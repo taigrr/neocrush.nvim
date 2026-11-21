@@ -110,3 +110,48 @@ describe('neocrush.terminal', function()
     end)
   end)
 end)
+
+describe('terminal close lifecycle', function()
+  local managed_terminal
+  local terminal_buf
+
+  before_each(function()
+    package.loaded['neocrush.terminal'] = nil
+    managed_terminal = require 'neocrush.terminal'
+    managed_terminal.setup { terminal_width = 40, terminal_cmd = 'cat' }
+    vim.cmd 'only!'
+    managed_terminal.open()
+    terminal_buf = managed_terminal._get_buf()
+  end)
+
+  after_each(function()
+    vim.cmd 'stopinsert'
+    if terminal_buf and vim.api.nvim_buf_is_valid(terminal_buf) then
+      vim.api.nvim_buf_delete(terminal_buf, { force = true })
+    end
+    vim.cmd 'only!'
+    package.loaded['neocrush.terminal'] = terminal
+  end)
+
+  it('hides the terminal without stopping its process', function()
+    managed_terminal.close()
+    assert.equals(1, #vim.api.nvim_tabpage_list_wins(0))
+    assert.is_true(vim.api.nvim_buf_is_valid(terminal_buf))
+    assert.equals(-1, vim.fn.jobwait({ vim.bo[terminal_buf].channel }, 0)[1])
+    managed_terminal.open()
+    assert.equals(terminal_buf, vim.api.nvim_get_current_buf())
+  end)
+
+  it('replaces the last terminal window with an editable buffer', function()
+    vim.cmd 'only!'
+    managed_terminal.close()
+    assert.equals(1, #vim.api.nvim_tabpage_list_wins(0))
+    assert.equals('', vim.bo.buftype)
+    assert.is_not.equals(terminal_buf, vim.api.nvim_get_current_buf())
+    assert.is_true(vim.api.nvim_buf_is_valid(terminal_buf))
+    assert.equals(-1, vim.fn.jobwait({ vim.bo[terminal_buf].channel }, 0)[1])
+    managed_terminal.open()
+    assert.equals(2, #vim.api.nvim_tabpage_list_wins(0))
+    assert.equals(terminal_buf, vim.api.nvim_get_current_buf())
+  end)
+end)
